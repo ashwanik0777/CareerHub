@@ -1,0 +1,44 @@
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: platform-postgres-db
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in your environment or .env}
+      POSTGRES_DB: platform_db
+    ports:
+      - '5432:5432'
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres -d platform_db']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        APP: web
+    container_name: platform-web-app
+    restart: always
+    ports:
+      - '3000:3000'
+    environment:
+      - DATABASE_URL=postgresql://postgres:${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}@db:5432/platform_db?schema=public
+      - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in your environment or .env}
+      - PORT=3000
+      - HEALTHCHECK_PATH=/api/ai/health
+    depends_on:
+      db:
+        condition: service_healthy
+
+# NOTE: the admin dashboard now lives inside the web app at /dashboard/admin
+# (ADMIN role required) — no separate admin container is needed.
+
+volumes:
+  postgres_data:

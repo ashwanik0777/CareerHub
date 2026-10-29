@@ -1,0 +1,453 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+  // native: local dev; the rest: Docker runners (arm64 + x64, Debian OpenSSL 3)
+  binaryTargets = ["native", "linux-arm64-openssl-3.0.x", "debian-openssl-3.0.x"]
+}
+
+enum Role {
+  USER
+  MODERATOR
+  ADMIN
+  SUPERADMIN
+}
+
+enum JobType {
+  FULL_TIME
+  PART_TIME
+  CONTRACT
+  INTERNSHIP
+  FREELANCE
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum LanguageProficiency {
+  ELEMENTARY
+  LIMITED
+  PROFESSIONAL
+  FULL_PROFESSIONAL
+  NATIVE
+}
+
+enum Visibility {
+  PUBLIC
+  PRIVATE
+  CONNECTED
+}
+
+enum SubscriptionTier {
+  FREE
+  PRO
+  ENTERPRISE
+}
+
+model User {
+  id              String           @id @default(uuid())
+  email           String           @unique
+  passwordHash    String
+  name            String
+  role            Role             @default(USER)
+  avatarUrl       String?
+  isEmailVerified Boolean          @default(false)
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+  sessions        Session[]
+  apiKeys         ApiKey[]
+  auditLogs       AuditLog[]
+  profile         Profile?
+  resumes         Resume[]
+  notifications   Notification[]
+  settings        AccountSettings?
+  subscription    Subscription?
+  oauthClients    OauthClient[]
+  oauthConsents   OauthConsent[]
+  profileVariants ProfileVariant[]
+}
+
+model Profile {
+  id                String          @id @default(uuid())
+  userId            String          @unique
+  user              User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  headline          String?
+  bio               String?
+  location          String?
+  preferredLocation String?
+  availability      String?
+  websiteUrl        String?
+  githubUrl         String?
+  linkedinUrl       String?
+  // Identity & contact fields job portals ask for during applications
+  firstName         String?
+  lastName          String?
+  phone             String?
+  alternatePhone    String?
+  alternateEmail    String?
+  dateOfBirth       String?
+  gender            String?
+  nationality       String?
+  maritalStatus     String?
+  category          String?
+  disabilityStatus  String?
+  passportNumber    String?
+  // Address (Workday/Naukri/Internshala style split address forms)
+  addressLine       String?
+  addressCity       String?
+  addressDistrict   String?
+  addressState      String?
+  addressCountry    String?
+  addressZip        String?
+  // Social & portfolio
+  twitterUrl        String?
+  portfolioUrl      String?
+  // Application preferences
+  totalExperience   String?
+  currentSalary     String?
+  expectedSalary    String?
+  noticePeriod      String?
+  workAuthorization String?
+  createdAt         DateTime        @default(now())
+  updatedAt         DateTime        @updatedAt
+  experiences       Experience[]
+  educations        Education[]
+  projects          Project[]
+  skills            Skill[]
+  certifications    Certification[]
+  awards            Award[]
+  languages         Language[]
+}
+
+model Experience {
+  id          String    @id @default(uuid())
+  profileId   String
+  profile     Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  company     String
+  position    String
+  location    String?
+  startDate   DateTime
+  endDate     DateTime?
+  isCurrent   Boolean   @default(false)
+  type        JobType   @default(FULL_TIME)
+  description String?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([profileId])
+}
+
+model Education {
+  id           String    @id @default(uuid())
+  profileId    String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  school       String
+  degree       String
+  fieldOfStudy String
+  startDate    DateTime
+  endDate      DateTime?
+  isCurrent    Boolean   @default(false)
+  grade        String?
+  description  String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([profileId])
+}
+
+model Project {
+  id           String    @id @default(uuid())
+  profileId    String
+  profile      Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title        String
+  description  String
+  url          String?
+  githubUrl    String?
+  startDate    DateTime?
+  endDate      DateTime?
+  technologies String[]
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+
+  @@index([profileId])
+}
+
+model Skill {
+  id        String     @id @default(uuid())
+  profileId String
+  profile   Profile    @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name      String
+  level     SkillLevel @default(INTERMEDIATE)
+  category  String?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([profileId, name])
+  @@index([profileId])
+}
+
+model Certification {
+  id            String    @id @default(uuid())
+  profileId     String
+  profile       Profile   @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name          String
+  issuer        String
+  issueDate     DateTime
+  expiryDate    DateTime?
+  credentialId  String?
+  credentialUrl String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([profileId])
+}
+
+model Award {
+  id          String   @id @default(uuid())
+  profileId   String
+  profile     Profile  @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  title       String
+  issuer      String
+  date        DateTime
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([profileId])
+}
+
+model Language {
+  id          String              @id @default(uuid())
+  profileId   String
+  profile     Profile             @relation(fields: [profileId], references: [id], onDelete: Cascade)
+  name        String
+  proficiency LanguageProficiency @default(PROFESSIONAL)
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+
+  @@unique([profileId, name])
+  @@index([profileId])
+}
+
+model Session {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token     String   @unique
+  expiresAt DateTime
+  userAgent String?
+  ipAddress String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([token])
+}
+
+model ApiKey {
+  id        String    @id @default(uuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  key       String    @unique
+  name      String
+  scopes    String[]  @default(["profile:read"])
+  expiresAt DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([key])
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String?
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  action    String
+  ipAddress String?
+  userAgent String?
+  details   String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([createdAt])
+}
+
+model Resume {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title      String
+  targetRole String?
+  summary    String?
+  isDefault  Boolean  @default(false)
+  structure  Json
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  @@index([userId])
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  message   String
+  type      String   @default("SYSTEM")
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([isRead])
+}
+
+model AccountSettings {
+  id                 String     @id @default(uuid())
+  userId             String     @unique
+  user               User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  emailNotifications Boolean    @default(true)
+  profileVisibility  Visibility @default(PUBLIC)
+  themePreference    String     @default("dark")
+  languagePreference String     @default("en")
+  createdAt          DateTime   @default(now())
+  updatedAt          DateTime   @updatedAt
+
+  @@index([userId])
+}
+
+model Subscription {
+  id        String           @id @default(uuid())
+  userId    String           @unique
+  user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tier      SubscriptionTier @default(FREE)
+  isActive  Boolean          @default(true)
+  expiresAt DateTime?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  @@index([userId])
+}
+
+model OauthClient {
+  id           String         @id @default(uuid())
+  userId       String
+  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId     String         @unique
+  clientSecret String
+  name         String
+  redirectUris String[]
+  createdAt    DateTime       @default(now())
+  consents     OauthConsent[]
+
+  @@index([userId])
+}
+
+model OauthConsent {
+  id        String      @id @default(uuid())
+  userId    String
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId  String
+  client    OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  scopes    String[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+
+  @@unique([userId, clientId])
+  @@index([userId])
+  @@index([clientId])
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Research & Intelligence Models
+// ────────────────────────────────────────────────────────────────────────────
+
+model FormDatasetEntry {
+  id                  String   @id @default(uuid())
+  platform            String
+  pageUrl             String
+  pageType            String   @default("application")
+  fieldName           String
+  fieldId             String?
+  fieldLabel          String?
+  fieldPlaceholder    String?
+  fieldType           String
+  inputType           String?
+  ariaLabel           String?
+  nearbyHeading       String?
+  parentSection       String?
+  domHierarchy        String?
+  validationRules     String?
+  semanticCategory    String?
+  ontologyAttributeId String?
+  isVerified          Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
+  @@index([platform])
+  @@index([semanticCategory])
+  @@index([isVerified])
+}
+
+model AutofillSession {
+  id              String   @id @default(uuid())
+  userId          String?
+  platform        String
+  pageUrl         String
+  totalFields     Int      @default(0)
+  detectedFields  Int      @default(0)
+  filledFields    Int      @default(0)
+  skippedFields   Int      @default(0)
+  userCorrections Int      @default(0)
+  highConfidence  Int      @default(0)
+  mediumConfidence Int     @default(0)
+  lowConfidence   Int      @default(0)
+  avgConfidence   Float    @default(0)
+  executionTimeMs Int      @default(0)
+  mappingDetails  Json?
+  createdAt       DateTime @default(now())
+
+  @@index([userId])
+  @@index([platform])
+  @@index([createdAt])
+}
+
+model ExperimentRun {
+  id              String   @id @default(uuid())
+  name            String
+  description     String?
+  strategy        String
+  datasetSize     Int      @default(0)
+  accuracy        Float    @default(0)
+  precision       Float    @default(0)
+  recall          Float    @default(0)
+  f1Score         Float    @default(0)
+  avgInferenceMs  Float    @default(0)
+  configuration   Json?
+  results         Json?
+  createdAt       DateTime @default(now())
+
+  @@index([strategy])
+  @@index([createdAt])
+}
+
+model ProfileVariant {
+  id            String   @id @default(uuid())
+  userId        String
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name          String
+  targetRole    String
+  scenario      String   @default("general")
+  structure     Json
+  isActive      Boolean  @default(true)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@index([userId])
+  @@index([scenario])
+}

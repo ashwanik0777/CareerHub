@@ -1,0 +1,1 @@
+{"version":3,"file":"highlightEngine.d.ts","sourceRoot":"","sources":["highlightEngine.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,qBAAa,eAAe;IAC1B,MAAM,CAAC,KAAK,CAAC,OAAO,EAAE,WAAW,EAAE,IAAI,EAAE,WAAW,GAAG,UAAU,GAAG,QAAQ;IA4B5E,MAAM,CAAC,KAAK,CAAC,OAAO,EAAE,WAAW;CAIlC"}

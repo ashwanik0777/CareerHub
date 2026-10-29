@@ -1,0 +1,36 @@
+# --- Dependencies & build output (rebuilt inside the container) ---
+node_modules
+**/node_modules
+.next
+**/.next
+.turbo
+**/.turbo
+dist
+**/dist
+build
+coverage
+*.log
+
+# --- Secrets: env is injected by docker compose, never baked into the image ---
+.env
+.env.*
+!.env.example
+
+# --- Training archive (174MB): only the runtime ONNX model in
+# --- packages/ai-model/model/ is needed inside the image ---
+apps/careerhub_production_model
+
+# --- Non-build files: keep the context small so context upload is instant ---
+.git
+.github
+docs
+*.md
+.DS_Store
+**/.DS_Store
+.dockerignore
+Dockerfile
+docker-compose.yml
+.prettierrc
+.editorconfig
+.vscode
+.idea

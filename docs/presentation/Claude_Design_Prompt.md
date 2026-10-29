@@ -1,0 +1,51 @@
+# Prompt for Claude (design) — attach the PPT/PDF, then paste everything below the line
+
+---
+
+I've attached my 13-slide research presentation as reference. The content, slide order, diagrams, and layout logic are exactly what I want — do not change any of that. What I need redone is the visual design: the dark navy + purple theme looks like every AI-generated deck out there, and I want it gone.
+
+Rebuild the same 13 slides (16:9) with this treatment:
+
+KEEP FROM THE ATTACHMENT (do not touch):
+- All 13 slides in the same order, with the same titles
+- Every piece of text exactly as written — do not reword, do not add bullets, do not pad
+- Every diagram's structure: the student-to-platforms chain (slide 2), the workflow + pain points split (slide 3), the isolated-domains vs unified-framework circles (slide 4), the numbered pipeline (slide 5), the two-column architecture flow (slide 6), the horizontal ML pipeline (slide 7), the dataset flow + three cards (slide 8), the two-column comparison with NO/YES pills (slide 9), the alternating timeline (slide 10), the metrics + KPI tiles (slide 11), the contribution cards + phased roadmap (slide 12), and the closing chain (slide 13)
+- The presenter block: Ashwani Kushwaha · Dr. Gunjan · CSE · NIT Summer Research Internship · 13 July 2026
+
+REPLACE THE THEME ENTIRELY:
+- Background: soft off-white #F6F7FA. Cards: pure white with thin #E3E7EE borders. No dark slides anywhere.
+- Text: near-black #121826 for headings and labels, gray #5D6675 for captions. White text only on solid accent shapes.
+- One accent: indigo #4F46E5 for hero elements, spines, and the highlighted cards; #4338CA when accent-colored text sits on a light surface.
+- Status colors, used sparingly and muted: green #059669, amber #D97706, red #DC2626 (their text variants: #047857 / #92400E / #B91C1C).
+- Flow arrows and timeline lines in gray #9AA3B2 — they must stay visible on the light background.
+
+RULES SO IT DOESN'T LOOK AI-GENERATED:
+- No gradients, no glow, no glassmorphism, no dark-mode "AI startup" styling
+- Shadows barely visible (soft, ~14% opacity) or none at all
+- No emoji, no decorative icons — plain dots, squares, and thin arrows are enough
+- No letter-spacing tricks except small uppercase kickers
+- Generous margins and white space; slides should feel calm, like a well-made academic deck
+- Typography: one clean sans family (Inter, or Poppins for headings + Inter for body). Titles large and bold, body regular.
+- Keep each slide readable in five seconds — the diagrams carry the story, not the text
+
+Also carry over the speaker notes from the attachment unchanged if the tool supports notes.
+
+If any slide text is hard to read from the attachment, ask me instead of inventing content.
+
+---
+
+## Fallback content map (paste this too if the tool can't read the attachment cleanly)
+
+1. **Cover** — Title: "An Intelligent Semantic Professional Identity Framework for Cross-Platform Recruitment Form Understanding and Browser-Assisted Autofill" · kicker "Research Proposal" · subtitle "NIT Summer Research Internship · CareerHub" · right side: browser form + identity card + AI node illustration · footer: Presenter Ashwani Kushwaha / Guide Dr. Gunjan / Department CSE / Date 13 July 2026
+2. **Why Does This Research Matter?** — Left: Student → LinkedIn → Internshala → Naukri → Wellfound → Google Careers → University Portal → Hackathon Portal → Company Portal. Caption: "Students repeatedly create identical professional profiles across multiple recruitment platforms — wasting time and effort." Right stat card "The Cost of Repetition": 80+ repeated form fields · 10+ platforms per student · 20 hrs lost every season · High manual error rate
+3. **Problem Statement** — Left workflow: Student → Open Portal → Create Profile → Upload Resume → Fill 80 Fields → Repeat Again ×3 → Submit. Right pain points: Time Consuming · Repeated Effort · Data Inconsistency · Manual Errors · No Profile Reuse · No Semantic Understanding. Quote: "Current recruitment platforms optimize recruiter workflows rather than applicant experience."
+4. **Literature Landscape & Research Gap** — Left: 8 isolated chips (Browser Autofill, Resume Parsing, Sentence Embeddings, Digital Identity, Recruitment AI, Browser Extensions, HTML Forms, Semantic Search) around a red circle "NO UNIFIED FRAMEWORK", caption "Isolated domains — none interoperate". Arrow "OUR RESEARCH" → right: same 8 chips connected to an indigo circle "Unified Semantic Professional Identity Framework", caption "One framework connects them all"
+5. **Proposed Solution** — Numbered pipeline: 01 One Professional Profile (single source of truth) · 02 CareerHub AI (identity intelligence layer) · 03 Semantic Understanding Engine (ontology of 70+ attributes — hero card) · 04 Browser Extension (Manifest V3 companion) · 05 Semantic Field Mapping (hybrid rules + embeddings) · 06 Cross-Platform Recruitment Portals (any ATS · any form) · 07 Automatic Intelligent Autofill (confidence-gated filling). Right: 10 platform chips (LinkedIn, Internshala, Naukri, Wellfound, Greenhouse, Lever, Ashby, Google Careers, Microsoft Careers, Custom Company Portals) + strip "Any ATS · Any form structure · One identity"
+6. **System Architecture** — Two-column flow: User → CareerHub Professional Identity → Browser Extension → DOM Extraction Engine → Metadata Extraction → Semantic Embedding → Field Classification → Confidence Ranking → User Confirmation → Autofill → Form Submission. Legend: user touchpoint (green) / browser pipeline (gray) / AI engine (indigo). Right: 4 model cards — all-MiniLM-L6-v2 (field–attribute similarity), DeBERTa-v3 (field intent classification), LayoutLMv3 (resume to structured profile), LightGBM (fill/confirm/defer gating), each with Purpose / Input / Output. Bottom: "Hybrid AI architecture combining semantic understanding with browser-assisted automation."
+7. **AI Architecture & ML Pipeline** — Horizontal pipeline: Recruitment Website → Browser Extension → DOM Extraction → Metadata Extraction → Sentence Embedding → Semantic Field Classification → Confidence Ranking → Professional Profile Mapping → User Confirmation → Autofill. Four cards below: all-MiniLM-L6-v2 (semantic similarity between HTML fields and profile attributes) · DeBERTa-v3-base (context-aware HTML field understanding) · LayoutLMv3 (extract structured information from resumes — marked FUTURE) · LightGBM (select the best semantic mapping). Side badges: Fast · Lightweight · Semantic AI · Production Ready · Research Driven. Bottom: "Hybrid AI pipeline combining semantic embeddings, transformer classification, and confidence ranking."
+8. **Building the First Semantic Recruitment HTML Dataset** — Flow: Recruitment Websites → Browser Extension → DOM Analyzer → HTML Metadata Extraction → Annotation Platform → Semantic Dataset → AI Training Dataset. Card 01 Raw HTML Dataset: HTML, Labels, Placeholder, XPath, CSS Selector, ARIA, Nearby Text, DOM Context. Card 02 Semantic Annotation Dataset: Ground Truth Labels (100+ classes), Category (8 groups), Reviewer (dual review), Confidence (0–1 score), Version (v1.0 tracked). Card 03 Portal Knowledge Graph: Portal (50+ sites), Framework (React · custom), Field Dictionary (per-portal map), Semantic Relationships (ontology edges). Research target: 50+ recruitment websites · 20K+ HTML fields · 100+ semantic categories
+9. **Google Autofill vs CareerHub AI** — Gray card vs indigo-tinted card, rows: Purpose (Generic form filling / Recruitment-focused identity) · Profile Type (Browser data store / Professional identity graph) · Supported Information (Name·address·payment / 80+ professional attributes) · Semantic AI (NO / YES) · DOM Understanding (Static heuristics / Deep DOM context) · Context Understanding (NO / YES) · Profile Synchronization (NO / Cloud-synced·versioned) · Resume Support (NO / Parsing+generation) · Cross Platform (Single browser / Any portal·any ATS) · Recruitment Optimization (NO / YES) · Browser Extension (Built-in·closed / MV3·user-controlled) · Confidence Score (NO / Calibrated 0–1) · Learning Capability (Static rules / Improves with data) · Future AI (— / Transformer roadmap). Bottom: "Google Autofill stores browser data. CareerHub understands professional identity."
+10. **Literature Review Timeline** — 2017 Auto-Filling Framework (rule-based web form autofill / breaks on unseen layouts) · 2020 Digital Identity SSI (user-controlled credentials / not applied to recruitment) · 2020 Autofill Security (attack-surface analysis / generic fields only) · 2024 Sentence Embeddings (cheap semantic similarity / not used on form fields) · 2024 Resume Parsing (structured CV extraction / one-way, no form mapping) · 2026 PageGuide (LLM page understanding / no profile ontology) · 2026 CommonForms (large-scale form corpus / not recruitment-specific) · 2026+ Our Research (unifies all eight domains / recruitment-native ontology). Bottom: "No existing research integrates all of these technologies into a unified recruitment-focused intelligent professional identity framework."
+11. **Expected Outcomes & Evaluation** — ML metrics: Accuracy ≥95% · Precision ≥93% · Recall ≥90% · F1 ≥0.92 · Semantic Matching Accuracy ≥95%. Product metrics: Time Saved ≥80% · Autofill Success Rate ≥90% · Manual Corrections ≤2/form · Cross-Platform Coverage 50+ portals · User Satisfaction ≥4.5/5 · Collection Coverage 20K+ fields. KPI tiles: 95%+ Semantic Mapping Accuracy · 20K+ Dataset Records · 50+ Websites · 100+ Semantic Categories
+12. **Research Contributions & Future Roadmap** — C1 Universal Professional Identity · C2 Semantic HTML Understanding · C3 Browser Extension · C4 AI Field Mapping · C5 Cross-Platform Autofill. Roadmap: Phase 1 Dataset Collection (Jun–Jul 2026, active) → Phase 2 Annotation (Aug 2026) → Phase 3 Model Training (Sep–Oct 2026) → Phase 4 AI Browser Autofill (Nov 2026) → Phase 5 Publication (Dec 2026) → Phase 6 Startup Product (2027 →). V2 Browser Expansion: Firefox, Edge, Safari. V3 Intelligence Expansion: Resume Parser, AI Resume Builder, Job Recommendation, ATS Optimization, Professional Identity Cloud
+13. **Conclusion** — "One Professional Profile. Unlimited Recruitment Platforms." Chain: Professional Identity → AI → Browser → Recruitment → Future. "Thank You." · "Questions & Discussion" · institute logo · research title in the footer

@@ -1,0 +1,24 @@
+{
+  "name": "@platform/ai-model",
+  "version": "1.0.0",
+  "private": true,
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "build": "tsc",
+    "smoke": "tsx scripts/smoke.ts",
+    "validate:template": "tsx scripts/validate-template.ts"
+  },
+  "dependencies": {
+    "@huggingface/transformers": "^4.2.0",
+    "@platform/types": "workspace:*",
+    "@platform/utils": "workspace:*",
+    "@platform/validation": "workspace:*"
+  },
+  "devDependencies": {
+    "@platform/semantic-engine": "workspace:*",
+    "@types/node": "^20.12.7",
+    "tsx": "^4.23.1",
+    "typescript": "^5.0.0"
+  }
+}

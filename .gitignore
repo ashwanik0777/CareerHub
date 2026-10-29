@@ -1,0 +1,27 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Environment files — never commit real credentials (see .env.example)
+.env
+.env.*
+!.env.example
+
+# Next.js / build output
+.next/
+dist/
+out/
+.turbo/
+
+# Prisma generated client
+packages/db/node_modules/.prisma/
+
+# Large model artifacts (training archive stays out of git; the runtime
+# ONNX model in packages/ai-model/model/ is intentionally tracked)
+apps/careerhub_production_model/
+
+# OS / editor noise
+.DS_Store
+*.log
+.vscode/
+.idea/

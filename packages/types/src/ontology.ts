@@ -1,0 +1,805 @@
+// ────────────────────────────────────────────────────────────────────────────
+// Professional Profile Ontology
+// ────────────────────────────────────────────────────────────────────────────
+// Defines every profile attribute as a semantic concept with standardized IDs,
+// human-readable descriptions, categories, aliases, and relationships.
+// This ontology is the canonical representation used throughout the platform
+// for semantic field understanding, mapping, and evaluation.
+// ────────────────────────────────────────────────────────────────────────────
+
+// SemanticCategory is defined in index.ts and used here by value.
+// To avoid circular dependency (ontology.ts ↔ index.ts), we define it locally
+// and index.ts will use this definition via re-export.
+
+/** Semantic categories for classifying professional profile attributes. */
+export enum SemanticCategory {
+  PERSONAL = 'PERSONAL',
+  CONTACT = 'CONTACT',
+  SOCIAL = 'SOCIAL',
+  EMPLOYMENT = 'EMPLOYMENT',
+  EDUCATION = 'EDUCATION',
+  PROJECT = 'PROJECT',
+  SKILL = 'SKILL',
+  CERTIFICATION = 'CERTIFICATION',
+  AWARD = 'AWARD',
+  LANGUAGE = 'LANGUAGE',
+  PUBLICATION = 'PUBLICATION',
+  RESEARCH = 'RESEARCH',
+  PREFERENCE = 'PREFERENCE',
+  PORTFOLIO = 'PORTFOLIO',
+}
+
+/**
+ * A single attribute in the Professional Profile Ontology.
+ * Represents one semantic concept in the professional identity space.
+ */
+export interface OntologyAttribute {
+  /** Unique identifier matching the profile data path (e.g., 'personalInfo.firstName') */
+  id: string;
+  /** Human-readable display label */
+  label: string;
+  /** Detailed description of the attribute's semantic meaning */
+  description: string;
+  /** Semantic category this attribute belongs to */
+  category: SemanticCategory;
+  /** Expected data type: 'string', 'email', 'url', 'phone', 'date', 'enum', 'text', 'file', 'boolean', 'number' */
+  dataType: string;
+  /** Alternative names, synonyms, and variations used on recruitment platforms */
+  aliases: string[];
+  /** Dot-notation path to resolve this attribute from the profile data object */
+  profilePath: string;
+  /** Example values for documentation and testing */
+  examples: string[];
+  /** IDs of semantically related attributes in the ontology */
+  relatedAttributes: string[];
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// Full Profile Ontology Definition
+// ────────────────────────────────────────────────────────────────────────────
+
+export const PROFILE_ONTOLOGY: OntologyAttribute[] = [
+  // ── PERSONAL INFORMATION ──────────────────────────────────────────────────
+  {
+    id: 'personalInfo.firstName',
+    label: 'First Name',
+    description: 'The given name or first name of the professional.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['first name', 'given name', 'forename', 'fname', 'first', 'name first'],
+    profilePath: 'personalInfo.firstName',
+    examples: ['Ashwani', 'John', 'Priya'],
+    relatedAttributes: ['personalInfo.lastName', 'name'],
+  },
+  {
+    id: 'personalInfo.lastName',
+    label: 'Last Name',
+    description: 'The family name or surname of the professional.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['last name', 'family name', 'surname', 'lname', 'last', 'name last'],
+    profilePath: 'personalInfo.lastName',
+    examples: ['Kushwaha', 'Doe', 'Sharma'],
+    relatedAttributes: ['personalInfo.firstName', 'name'],
+  },
+  {
+    id: 'name',
+    label: 'Full Name',
+    description: 'The complete name of the professional, combining first and last name.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['full name', 'candidate name', 'applicant name', 'your name', 'complete name', 'legal name'],
+    profilePath: 'name',
+    examples: ['Ashwani Kushwaha', 'John Doe'],
+    relatedAttributes: ['personalInfo.firstName', 'personalInfo.lastName'],
+  },
+  {
+    id: 'personalInfo.headline',
+    label: 'Professional Title',
+    description: 'A brief professional title or headline summarizing the career focus.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['headline', 'tagline', 'professional title', 'job title', 'current title', 'designation', 'role title', 'position title'],
+    profilePath: 'headline',
+    examples: ['Full Stack Developer', 'Machine Learning Engineer', 'CS Graduate Student'],
+    relatedAttributes: ['experience.position'],
+  },
+  {
+    id: 'personalInfo.bio',
+    label: 'Professional Summary',
+    description: 'A detailed professional summary, biography, or personal statement.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'text',
+    aliases: ['summary', 'biography', 'about me', 'cover letter', 'personal statement', 'professional summary', 'career summary', 'objective', 'about', 'bio', 'self introduction', 'career objective'],
+    profilePath: 'bio',
+    examples: ['Experienced full-stack developer with 3+ years...'],
+    relatedAttributes: ['personalInfo.headline'],
+  },
+  {
+    id: 'personalInfo.location',
+    label: 'Location',
+    description: 'Current city, address, or geographical location of the professional.',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['location', 'city', 'address', 'residence', 'current location', 'home address', 'mailing address', 'street address', 'city state', 'zip code', 'postal code', 'pincode', 'country', 'state', 'region'],
+    profilePath: 'location',
+    examples: ['New Delhi, India', 'San Francisco, CA', 'London, UK'],
+    relatedAttributes: ['personalInfo.preferredLocation'],
+  },
+  {
+    id: 'personalInfo.preferredLocation',
+    label: 'Preferred Work Location',
+    description: 'The preferred geographical location for future employment.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['preferred location', 'desired location', 'work location preference', 'relocation preference', 'willing to relocate'],
+    profilePath: 'preferredLocation',
+    examples: ['Remote', 'Bangalore, India', 'New York, NY'],
+    relatedAttributes: ['personalInfo.location'],
+  },
+  {
+    id: 'personalInfo.availability',
+    label: 'Availability',
+    description: 'Current availability status or earliest start date for new employment.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['availability', 'start date', 'available from', 'notice period', 'earliest start date', 'when can you start', 'date available', 'joining date'],
+    profilePath: 'availability',
+    examples: ['Immediately', '2 weeks notice', 'January 2027'],
+    relatedAttributes: [],
+  },
+
+  // ── CONTACT INFORMATION ───────────────────────────────────────────────────
+  {
+    id: 'email',
+    label: 'Email Address',
+    description: 'Primary email address used for professional communication.',
+    category: SemanticCategory.CONTACT,
+    dataType: 'email',
+    aliases: ['email', 'e-mail', 'mail address', 'email address', 'contact email', 'email id', 'mail', 'electronic mail'],
+    profilePath: 'email',
+    examples: ['john.doe@example.com'],
+    relatedAttributes: ['personalInfo.phone'],
+  },
+  {
+    id: 'personalInfo.phone',
+    label: 'Phone Number',
+    description: 'Primary phone number for professional contact.',
+    category: SemanticCategory.CONTACT,
+    dataType: 'phone',
+    aliases: ['phone', 'telephone', 'mobile', 'cell', 'contact number', 'phone number', 'mobile number', 'tel', 'cell phone', 'contact phone', 'daytime phone', 'primary phone'],
+    profilePath: 'phone',
+    examples: ['+91-9876543210', '+1-555-123-4567'],
+    relatedAttributes: ['email'],
+  },
+
+  // ── SOCIAL PROFILES ───────────────────────────────────────────────────────
+  {
+    id: 'linkedinUrl',
+    label: 'LinkedIn Profile URL',
+    description: 'URL to the professional LinkedIn profile.',
+    category: SemanticCategory.SOCIAL,
+    dataType: 'url',
+    aliases: ['linkedin', 'linkedin url', 'linkedin profile', 'linkedin link', 'lnkd', 'linkedin page'],
+    profilePath: 'linkedinUrl',
+    examples: ['https://linkedin.com/in/johndoe'],
+    relatedAttributes: ['githubUrl', 'websiteUrl'],
+  },
+  {
+    id: 'githubUrl',
+    label: 'GitHub Profile URL',
+    description: 'URL to the GitHub profile or repository.',
+    category: SemanticCategory.SOCIAL,
+    dataType: 'url',
+    aliases: ['github', 'github url', 'github profile', 'github link', 'github username', 'github page', 'github repo', 'source code'],
+    profilePath: 'githubUrl',
+    examples: ['https://github.com/johndoe'],
+    relatedAttributes: ['linkedinUrl', 'websiteUrl'],
+  },
+  {
+    id: 'websiteUrl',
+    label: 'Personal Website URL',
+    description: 'URL to a personal website, portfolio, or blog.',
+    category: SemanticCategory.PORTFOLIO,
+    dataType: 'url',
+    aliases: ['portfolio', 'website', 'personal site', 'homepage', 'personal website', 'blog', 'web page', 'portfolio url', 'portfolio link', 'personal url', 'online portfolio'],
+    profilePath: 'websiteUrl',
+    examples: ['https://johndoe.dev'],
+    relatedAttributes: ['linkedinUrl', 'githubUrl'],
+  },
+  {
+    id: 'twitterUrl',
+    label: 'Twitter/X Profile URL',
+    description: 'URL to the Twitter or X social media profile.',
+    category: SemanticCategory.SOCIAL,
+    dataType: 'url',
+    aliases: ['twitter', 'x profile', 'twitter url', 'twitter handle', 'tweet'],
+    profilePath: 'twitterUrl',
+    examples: ['https://twitter.com/johndoe'],
+    relatedAttributes: ['linkedinUrl'],
+  },
+
+  // ── EMPLOYMENT / EXPERIENCE ───────────────────────────────────────────────
+  {
+    id: 'experience.company',
+    label: 'Company Name',
+    description: 'Name of the employer or organization.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'string',
+    aliases: ['company', 'employer', 'organization', 'company name', 'org', 'organisation', 'firm', 'workplace', 'current company', 'most recent employer', 'current employer'],
+    profilePath: 'experiences[0].company',
+    examples: ['Google', 'Microsoft', 'Infosys'],
+    relatedAttributes: ['experience.position', 'experience.location'],
+  },
+  {
+    id: 'experience.position',
+    label: 'Job Title',
+    description: 'Title or designation held at the organization.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'string',
+    aliases: ['position', 'job title', 'title', 'role', 'designation', 'current position', 'current role', 'most recent title'],
+    profilePath: 'experiences[0].position',
+    examples: ['Software Engineer', 'Data Analyst Intern', 'Product Manager'],
+    relatedAttributes: ['experience.company', 'personalInfo.headline'],
+  },
+  {
+    id: 'experience.location',
+    label: 'Work Location',
+    description: 'Location of the workplace or employment.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'string',
+    aliases: ['work location', 'office location', 'job location', 'employment location'],
+    profilePath: 'experiences[0].location',
+    examples: ['Bangalore, India', 'Remote'],
+    relatedAttributes: ['personalInfo.location', 'experience.company'],
+  },
+  {
+    id: 'experience.startDate',
+    label: 'Employment Start Date',
+    description: 'Start date of the employment period.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'date',
+    aliases: ['start date', 'from date', 'date started', 'joined on', 'employment start'],
+    profilePath: 'experiences[0].startDate',
+    examples: ['2024-01-15', 'January 2024'],
+    relatedAttributes: ['experience.endDate'],
+  },
+  {
+    id: 'experience.endDate',
+    label: 'Employment End Date',
+    description: 'End date of the employment period. Null if currently employed.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'date',
+    aliases: ['end date', 'to date', 'date ended', 'left on', 'employment end', 'last day'],
+    profilePath: 'experiences[0].endDate',
+    examples: ['2025-06-30', 'Present'],
+    relatedAttributes: ['experience.startDate'],
+  },
+  {
+    id: 'experience.description',
+    label: 'Job Description',
+    description: 'Description of responsibilities, achievements, and duties during employment.',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'text',
+    aliases: ['job description', 'responsibilities', 'duties', 'achievements', 'work description', 'role description', 'job responsibilities'],
+    profilePath: 'experiences[0].description',
+    examples: ['Led a team of 5 engineers to deliver...'],
+    relatedAttributes: ['experience.position'],
+  },
+  {
+    id: 'experience.type',
+    label: 'Employment Type',
+    description: 'Type of employment arrangement (full-time, part-time, contract, internship, freelance).',
+    category: SemanticCategory.EMPLOYMENT,
+    dataType: 'enum',
+    aliases: ['employment type', 'job type', 'work type', 'contract type', 'engagement type'],
+    profilePath: 'experiences[0].type',
+    examples: ['FULL_TIME', 'INTERNSHIP', 'CONTRACT'],
+    relatedAttributes: ['experience.company'],
+  },
+
+  // ── EDUCATION ─────────────────────────────────────────────────────────────
+  {
+    id: 'education.school',
+    label: 'Institution Name',
+    description: 'Name of the educational institution or university.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'string',
+    aliases: ['school', 'university', 'institution', 'college', 'school name', 'university name', 'institution name', 'alma mater', 'educational institution'],
+    profilePath: 'educations[0].school',
+    examples: ['IIT Delhi', 'MIT', 'Stanford University'],
+    relatedAttributes: ['education.degree', 'education.fieldOfStudy'],
+  },
+  {
+    id: 'education.degree',
+    label: 'Degree',
+    description: 'Academic degree or qualification obtained.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'string',
+    aliases: ['degree', 'qualification', 'academic degree', 'degree type', 'degree name', 'diploma', 'certificate'],
+    profilePath: 'educations[0].degree',
+    examples: ['B.Tech', 'M.S.', 'Ph.D.', 'MBA'],
+    relatedAttributes: ['education.school', 'education.fieldOfStudy'],
+  },
+  {
+    id: 'education.fieldOfStudy',
+    label: 'Field of Study',
+    description: 'Academic major, specialization, or field of study.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'string',
+    aliases: ['field of study', 'major', 'specialization', 'concentration', 'discipline', 'subject', 'branch', 'stream', 'department'],
+    profilePath: 'educations[0].fieldOfStudy',
+    examples: ['Computer Science', 'Electrical Engineering', 'Data Science'],
+    relatedAttributes: ['education.degree'],
+  },
+  {
+    id: 'education.startDate',
+    label: 'Education Start Date',
+    description: 'Start date of the academic program.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'date',
+    aliases: ['education start', 'enrolled on', 'admission date', 'start year'],
+    profilePath: 'educations[0].startDate',
+    examples: ['2020-08-01'],
+    relatedAttributes: ['education.endDate'],
+  },
+  {
+    id: 'education.endDate',
+    label: 'Education End Date',
+    description: 'Expected or actual graduation date.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'date',
+    aliases: ['graduation date', 'education end', 'completion date', 'expected graduation', 'end year', 'grad date'],
+    profilePath: 'educations[0].endDate',
+    examples: ['2024-05-15', 'Expected May 2025'],
+    relatedAttributes: ['education.startDate'],
+  },
+  {
+    id: 'education.grade',
+    label: 'Academic Grade',
+    description: 'GPA, percentage, or grade classification achieved.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'string',
+    aliases: ['grade', 'gpa', 'cgpa', 'percentage', 'marks', 'grade point average', 'academic performance', 'score', 'class', 'division'],
+    profilePath: 'educations[0].grade',
+    examples: ['3.8/4.0', '8.5/10', '85%', 'First Class'],
+    relatedAttributes: ['education.degree'],
+  },
+  {
+    id: 'education.description',
+    label: 'Education Description',
+    description: 'Additional details about coursework, thesis, or academic achievements.',
+    category: SemanticCategory.EDUCATION,
+    dataType: 'text',
+    aliases: ['education description', 'coursework', 'thesis', 'academic description', 'relevant courses'],
+    profilePath: 'educations[0].description',
+    examples: ['Thesis: Deep Learning for NLP...', 'Relevant courses: Data Structures, ML...'],
+    relatedAttributes: ['education.degree', 'education.fieldOfStudy'],
+  },
+
+  // ── PROJECTS ──────────────────────────────────────────────────────────────
+  {
+    id: 'project.title',
+    label: 'Project Title',
+    description: 'Name or title of a personal, academic, or professional project.',
+    category: SemanticCategory.PROJECT,
+    dataType: 'string',
+    aliases: ['project title', 'project name', 'project', 'work title'],
+    profilePath: 'projects[0].title',
+    examples: ['AI Resume Builder', 'E-Commerce Platform'],
+    relatedAttributes: ['project.description', 'project.technologies'],
+  },
+  {
+    id: 'project.description',
+    label: 'Project Description',
+    description: 'Description of the project scope, objectives, and outcomes.',
+    category: SemanticCategory.PROJECT,
+    dataType: 'text',
+    aliases: ['project description', 'project details', 'project summary', 'work description'],
+    profilePath: 'projects[0].description',
+    examples: ['Built a full-stack web application using...'],
+    relatedAttributes: ['project.title'],
+  },
+  {
+    id: 'project.url',
+    label: 'Project URL',
+    description: 'Live demo URL or deployment link for the project.',
+    category: SemanticCategory.PROJECT,
+    dataType: 'url',
+    aliases: ['project url', 'live demo', 'demo link', 'project link', 'deployed url'],
+    profilePath: 'projects[0].url',
+    examples: ['https://myproject.vercel.app'],
+    relatedAttributes: ['project.githubUrl'],
+  },
+  {
+    id: 'project.githubUrl',
+    label: 'Project Repository URL',
+    description: 'Source code repository URL for the project.',
+    category: SemanticCategory.PROJECT,
+    dataType: 'url',
+    aliases: ['project github', 'repository url', 'source code', 'repo link', 'code repository'],
+    profilePath: 'projects[0].githubUrl',
+    examples: ['https://github.com/user/project'],
+    relatedAttributes: ['project.url', 'githubUrl'],
+  },
+  {
+    id: 'project.technologies',
+    label: 'Technologies Used',
+    description: 'List of technologies, frameworks, and tools used in the project.',
+    category: SemanticCategory.PROJECT,
+    dataType: 'string',
+    aliases: ['technologies', 'tech stack', 'tools used', 'built with', 'frameworks', 'languages used'],
+    profilePath: 'projects[0].technologies',
+    examples: ['React, Node.js, PostgreSQL', 'Python, TensorFlow, AWS'],
+    relatedAttributes: ['skills.name'],
+  },
+
+  // ── SKILLS ────────────────────────────────────────────────────────────────
+  {
+    id: 'skills.name',
+    label: 'Skill Name',
+    description: 'Name of a technical or professional skill.',
+    category: SemanticCategory.SKILL,
+    dataType: 'string',
+    aliases: ['skill', 'skill name', 'technical skill', 'competency', 'proficiency', 'expertise', 'technology', 'tool', 'programming language'],
+    profilePath: 'skills[0].name',
+    examples: ['TypeScript', 'React', 'Machine Learning', 'Docker'],
+    relatedAttributes: ['skills.level', 'skills.category'],
+  },
+  {
+    id: 'skills.level',
+    label: 'Skill Proficiency Level',
+    description: 'Self-assessed proficiency level for a skill.',
+    category: SemanticCategory.SKILL,
+    dataType: 'enum',
+    aliases: ['skill level', 'proficiency level', 'expertise level', 'competency level', 'experience level'],
+    profilePath: 'skills[0].level',
+    examples: ['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'EXPERT'],
+    relatedAttributes: ['skills.name'],
+  },
+  {
+    id: 'skills.category',
+    label: 'Skill Category',
+    description: 'Category or grouping for the skill (e.g., Languages, Frameworks, Databases).',
+    category: SemanticCategory.SKILL,
+    dataType: 'string',
+    aliases: ['skill category', 'skill type', 'skill group', 'category'],
+    profilePath: 'skills[0].category',
+    examples: ['Programming Languages', 'Frameworks', 'Databases', 'DevOps'],
+    relatedAttributes: ['skills.name'],
+  },
+
+  // ── CERTIFICATIONS ────────────────────────────────────────────────────────
+  {
+    id: 'certifications.name',
+    label: 'Certification Name',
+    description: 'Name of the professional certification or course completion.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'string',
+    aliases: ['certification', 'certificate', 'certification name', 'course', 'course name', 'professional certification', 'credential'],
+    profilePath: 'certifications[0].name',
+    examples: ['AWS Solutions Architect', 'Google Cloud Professional'],
+    relatedAttributes: ['certifications.issuer'],
+  },
+  {
+    id: 'certifications.issuer',
+    label: 'Certification Issuer',
+    description: 'Organization that issued the certification.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'string',
+    aliases: ['issuer', 'issuing organization', 'certifying body', 'certificate issuer', 'issued by'],
+    profilePath: 'certifications[0].issuer',
+    examples: ['Amazon Web Services', 'Google', 'Coursera'],
+    relatedAttributes: ['certifications.name'],
+  },
+  {
+    id: 'certifications.issueDate',
+    label: 'Certification Issue Date',
+    description: 'Date when the certification was issued.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'date',
+    aliases: ['issue date', 'date issued', 'certification date', 'date earned'],
+    profilePath: 'certifications[0].issueDate',
+    examples: ['2024-03-15'],
+    relatedAttributes: ['certifications.expiryDate'],
+  },
+  {
+    id: 'certifications.expiryDate',
+    label: 'Certification Expiry Date',
+    description: 'Date when the certification expires.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'date',
+    aliases: ['expiry date', 'expiration date', 'valid until', 'expires on'],
+    profilePath: 'certifications[0].expiryDate',
+    examples: ['2027-03-15'],
+    relatedAttributes: ['certifications.issueDate'],
+  },
+  {
+    id: 'certifications.credentialId',
+    label: 'Credential ID',
+    description: 'Unique identifier for the certification credential.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'string',
+    aliases: ['credential id', 'certificate id', 'license number', 'credential number', 'verification id'],
+    profilePath: 'certifications[0].credentialId',
+    examples: ['AWS-SAA-C03-12345'],
+    relatedAttributes: ['certifications.credentialUrl'],
+  },
+  {
+    id: 'certifications.credentialUrl',
+    label: 'Credential Verification URL',
+    description: 'URL to verify the certification credential online.',
+    category: SemanticCategory.CERTIFICATION,
+    dataType: 'url',
+    aliases: ['credential url', 'verification url', 'certificate link', 'verify link'],
+    profilePath: 'certifications[0].credentialUrl',
+    examples: ['https://www.credly.com/badges/...'],
+    relatedAttributes: ['certifications.credentialId'],
+  },
+
+  // ── AWARDS & ACHIEVEMENTS ─────────────────────────────────────────────────
+  {
+    id: 'awards.title',
+    label: 'Award Title',
+    description: 'Name or title of the award or achievement.',
+    category: SemanticCategory.AWARD,
+    dataType: 'string',
+    aliases: ['award', 'award title', 'achievement', 'honor', 'recognition', 'prize', 'award name'],
+    profilePath: 'awards[0].title',
+    examples: ['Dean\'s List', 'Hackathon Winner', 'Best Paper Award'],
+    relatedAttributes: ['awards.issuer'],
+  },
+  {
+    id: 'awards.issuer',
+    label: 'Award Issuer',
+    description: 'Organization or institution that granted the award.',
+    category: SemanticCategory.AWARD,
+    dataType: 'string',
+    aliases: ['awarding body', 'granted by', 'award issuer', 'presented by'],
+    profilePath: 'awards[0].issuer',
+    examples: ['Stanford University', 'ACM', 'Google'],
+    relatedAttributes: ['awards.title'],
+  },
+  {
+    id: 'awards.date',
+    label: 'Award Date',
+    description: 'Date when the award was received.',
+    category: SemanticCategory.AWARD,
+    dataType: 'date',
+    aliases: ['award date', 'date received', 'year awarded'],
+    profilePath: 'awards[0].date',
+    examples: ['2024-09-01'],
+    relatedAttributes: ['awards.title'],
+  },
+  {
+    id: 'awards.description',
+    label: 'Award Description',
+    description: 'Description of the award, its significance, or the achievement.',
+    category: SemanticCategory.AWARD,
+    dataType: 'text',
+    aliases: ['award description', 'achievement description', 'award details'],
+    profilePath: 'awards[0].description',
+    examples: ['Awarded for outstanding research in NLP...'],
+    relatedAttributes: ['awards.title'],
+  },
+
+  // ── LANGUAGES ─────────────────────────────────────────────────────────────
+  {
+    id: 'languages.name',
+    label: 'Language Name',
+    description: 'Name of a spoken or written language.',
+    category: SemanticCategory.LANGUAGE,
+    dataType: 'string',
+    aliases: ['language', 'spoken language', 'language name', 'languages known'],
+    profilePath: 'languages[0].name',
+    examples: ['English', 'Hindi', 'Spanish', 'Mandarin'],
+    relatedAttributes: ['languages.proficiency'],
+  },
+  {
+    id: 'languages.proficiency',
+    label: 'Language Proficiency',
+    description: 'Proficiency level in the language.',
+    category: SemanticCategory.LANGUAGE,
+    dataType: 'enum',
+    aliases: ['language proficiency', 'fluency', 'language level', 'proficiency level'],
+    profilePath: 'languages[0].proficiency',
+    examples: ['NATIVE', 'PROFESSIONAL', 'ELEMENTARY'],
+    relatedAttributes: ['languages.name'],
+  },
+
+  // ── PUBLICATIONS & RESEARCH ───────────────────────────────────────────────
+  {
+    id: 'publications.title',
+    label: 'Publication Title',
+    description: 'Title of an academic paper, article, or publication.',
+    category: SemanticCategory.PUBLICATION,
+    dataType: 'string',
+    aliases: ['publication', 'paper title', 'article title', 'research paper', 'publication title'],
+    profilePath: 'publications[0].title',
+    examples: ['Semantic Understanding of Web Forms using Transformer Models'],
+    relatedAttributes: ['publications.venue'],
+  },
+  {
+    id: 'publications.venue',
+    label: 'Publication Venue',
+    description: 'Journal, conference, or venue where the work was published.',
+    category: SemanticCategory.PUBLICATION,
+    dataType: 'string',
+    aliases: ['venue', 'journal', 'conference', 'published in', 'publication venue'],
+    profilePath: 'publications[0].venue',
+    examples: ['IEEE ICSE 2025', 'ACM Computing Surveys'],
+    relatedAttributes: ['publications.title'],
+  },
+  {
+    id: 'publications.url',
+    label: 'Publication URL',
+    description: 'URL to the published work.',
+    category: SemanticCategory.PUBLICATION,
+    dataType: 'url',
+    aliases: ['publication url', 'paper link', 'doi', 'arxiv link'],
+    profilePath: 'publications[0].url',
+    examples: ['https://arxiv.org/abs/2025.12345'],
+    relatedAttributes: ['publications.title'],
+  },
+  {
+    id: 'research.area',
+    label: 'Research Area',
+    description: 'Primary area or domain of research interest.',
+    category: SemanticCategory.RESEARCH,
+    dataType: 'string',
+    aliases: ['research area', 'research interest', 'research focus', 'area of research', 'research domain'],
+    profilePath: 'research.area',
+    examples: ['Natural Language Processing', 'Computer Vision', 'Systems Security'],
+    relatedAttributes: ['publications.title'],
+  },
+
+  // ── RESUME / CV FILE ──────────────────────────────────────────────────────
+  {
+    id: 'resume_file',
+    label: 'Resume / CV File',
+    description: 'Uploaded resume or curriculum vitae document.',
+    category: SemanticCategory.PORTFOLIO,
+    dataType: 'file',
+    aliases: ['resume', 'cv', 'curriculum vitae', 'resume file', 'cv upload', 'upload resume', 'attach resume', 'resume upload', 'resume attachment'],
+    profilePath: 'resume_file',
+    examples: ['resume.pdf', 'cv_john_doe.pdf'],
+    relatedAttributes: [],
+  },
+
+  // ── EMPLOYMENT PREFERENCES ────────────────────────────────────────────────
+  {
+    id: 'preference.salary',
+    label: 'Expected Salary',
+    description: 'Expected salary or compensation range.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['salary', 'expected salary', 'salary expectation', 'compensation', 'desired salary', 'pay expectation', 'salary range', 'ctc', 'expected ctc'],
+    profilePath: 'preferences.salary',
+    examples: ['$80,000 - $120,000', '15 LPA'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'preference.workAuthorization',
+    label: 'Work Authorization',
+    description: 'Legal authorization to work in a specific country.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['work authorization', 'visa status', 'work permit', 'authorized to work', 'work eligibility', 'sponsorship required', 'visa sponsorship'],
+    profilePath: 'preferences.workAuthorization',
+    examples: ['US Citizen', 'H1B Visa', 'No sponsorship needed'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'preference.remotePreference',
+    label: 'Remote Work Preference',
+    description: 'Preference for remote, hybrid, or on-site work.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['remote preference', 'work mode', 'remote work', 'hybrid', 'onsite', 'work from home', 'remote friendly'],
+    profilePath: 'preferences.remotePreference',
+    examples: ['Remote Only', 'Hybrid', 'On-site preferred'],
+    relatedAttributes: ['personalInfo.preferredLocation'],
+  },
+  {
+    id: 'preference.yearsOfExperience',
+    label: 'Years of Experience',
+    description: 'Total years of professional work experience.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'number',
+    aliases: ['years of experience', 'experience years', 'total experience', 'work experience years', 'yoe', 'professional experience'],
+    profilePath: 'preferences.yearsOfExperience',
+    examples: ['3', '5+', '0-1'],
+    relatedAttributes: ['experience.company'],
+  },
+
+  // ── ADDITIONAL IDENTITY ───────────────────────────────────────────────────
+  {
+    id: 'identity.gender',
+    label: 'Gender',
+    description: 'Gender identity (often optional/voluntary in applications).',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'enum',
+    aliases: ['gender', 'sex', 'gender identity'],
+    profilePath: 'identity.gender',
+    examples: ['Male', 'Female', 'Non-binary', 'Prefer not to say'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'identity.ethnicity',
+    label: 'Ethnicity',
+    description: 'Ethnic background (voluntary EEO information).',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['ethnicity', 'race', 'ethnic background', 'racial identity'],
+    profilePath: 'identity.ethnicity',
+    examples: ['Asian', 'Hispanic/Latino', 'Prefer not to say'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'identity.veteranStatus',
+    label: 'Veteran Status',
+    description: 'Military veteran status (voluntary EEO information).',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['veteran', 'veteran status', 'military service', 'military veteran'],
+    profilePath: 'identity.veteranStatus',
+    examples: ['Not a veteran', 'Protected veteran'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'identity.disabilityStatus',
+    label: 'Disability Status',
+    description: 'Disability status (voluntary EEO information).',
+    category: SemanticCategory.PERSONAL,
+    dataType: 'string',
+    aliases: ['disability', 'disability status', 'differently abled', 'handicap'],
+    profilePath: 'identity.disabilityStatus',
+    examples: ['No disability', 'Prefer not to say'],
+    relatedAttributes: [],
+  },
+
+  // ── REFERRAL ──────────────────────────────────────────────────────────────
+  {
+    id: 'referral.source',
+    label: 'How Did You Hear About Us',
+    description: 'Source through which the applicant learned about the opportunity.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['referral source', 'how did you hear', 'source', 'referred by', 'referral', 'how did you find us', 'application source'],
+    profilePath: 'referral.source',
+    examples: ['LinkedIn', 'Company Website', 'Employee Referral', 'Job Board'],
+    relatedAttributes: [],
+  },
+  {
+    id: 'referral.referrerName',
+    label: 'Referrer Name',
+    description: 'Name of the person who referred the applicant.',
+    category: SemanticCategory.PREFERENCE,
+    dataType: 'string',
+    aliases: ['referrer', 'referrer name', 'referred by name', 'employee referral name'],
+    profilePath: 'referral.referrerName',
+    examples: ['Jane Smith'],
+    relatedAttributes: ['referral.source'],
+  },
+];
+
+/**
+ * Lookup an ontology attribute by its ID.
+ */
+export function getOntologyAttribute(id: string): OntologyAttribute | undefined {
+  return PROFILE_ONTOLOGY.find(attr => attr.id === id);
+}
+
+/**
+ * Get all ontology attributes for a given semantic category.
+ */
+export function getAttributesByCategory(category: SemanticCategory): OntologyAttribute[] {
+  return PROFILE_ONTOLOGY.filter(attr => attr.category === category);
+}
+
+/**
+ * Get the total count of attributes in the ontology.
+ */
+export function getOntologySize(): number {
+  return PROFILE_ONTOLOGY.length;
+}
