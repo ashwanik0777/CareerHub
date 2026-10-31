@@ -2,9 +2,18 @@
 // Benchmark CLI — Run Benchmarks from the Command Line
 // ────────────────────────────────────────────────────────────────────────────
 // Usage: node dist/benchmarking/run-benchmarks.js
+// Exits non-zero when accuracy or F1 regress below MIN_* (CI gate).
 // ────────────────────────────────────────────────────────────────────────────
 
 import { BenchmarkRunner } from './index';
+
+// This package has no @types/node (it is also bundled for the browser); the
+// CLI only needs these two members of the Node global.
+declare const process: { env: Record<string, string | undefined>; exitCode?: number };
+
+/** Regression gate. Raise these as the engine improves; never lower silently. */
+const MIN_ACCURACY = Number(process.env.BENCHMARK_MIN_ACCURACY ?? '0.80');
+const MIN_F1 = Number(process.env.BENCHMARK_MIN_F1 ?? '0.80');
 
 function formatPercent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
@@ -91,6 +100,20 @@ function main(): void {
   console.log(`  Correct: ${overall.detailedResults.filter(d => d.correct).length}`);
   console.log(`  Incorrect: ${overall.detailedResults.filter(d => !d.correct).length}`);
   console.log();
+
+  const failures: string[] = [];
+  if (overall.accuracy < MIN_ACCURACY) {
+    failures.push(`accuracy ${formatPercent(overall.accuracy)} < required ${formatPercent(MIN_ACCURACY)}`);
+  }
+  if (overall.f1Score < MIN_F1) {
+    failures.push(`F1 ${formatPercent(overall.f1Score)} < required ${formatPercent(MIN_F1)}`);
+  }
+  if (failures.length > 0) {
+    console.error(`\n  ❌ Benchmark regression: ${failures.join('; ')}`);
+    process.exitCode = 1;
+  } else {
+    console.log(`  ✅ Gate passed (accuracy ≥ ${formatPercent(MIN_ACCURACY)}, F1 ≥ ${formatPercent(MIN_F1)})`);
+  }
 }
 
 main();

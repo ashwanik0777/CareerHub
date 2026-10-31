@@ -11,7 +11,15 @@ export interface RequestOptions extends RequestInit {
   token?: string;
   retries?: number;
   backoffDelayMs?: number;
+  /**
+   * Opt a POST/PUT/PATCH/DELETE into retries. Only set this when the server
+   * side is idempotent (e.g. keyed by a client-generated id); otherwise a
+   * request that reached the server and then failed would be replayed.
+   */
+  idempotent?: boolean;
 }
+
+const IDEMPOTENT_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
 
 export class ApiClient {
   private baseUrl: string;
@@ -25,8 +33,11 @@ export class ApiClient {
   }
 
   public async request<T>(path: string, options: RequestOptions = {}): Promise<T> {
-    const { token, retries = 3, backoffDelayMs = 300, ...fetchOptions } = options;
+    const { token, retries = 3, backoffDelayMs = 300, idempotent, ...fetchOptions } = options;
     const url = `${this.baseUrl}${path}`;
+    const method = (fetchOptions.method || 'GET').toUpperCase();
+    const canRetry = idempotent === true || IDEMPOTENT_METHODS.has(method);
+    const maxAttempts = canRetry ? Math.max(1, retries) : 1;
 
     // Add authorization and JSON content headers
     const headers = new Headers(fetchOptions.headers || {});
@@ -40,7 +51,7 @@ export class ApiClient {
 
     let attempt = 0;
 
-    while (attempt < retries) {
+    while (attempt < maxAttempts) {
       try {
         const response = await fetch(url, fetchOptions);
 
@@ -80,8 +91,8 @@ export class ApiClient {
         } else if (statusCode === 404) {
           throw new NotFoundError(errorMessage);
         } else if (statusCode >= 500) {
-          // If internal error, retry on network/server status codes
-          if (attempt + 1 < retries) {
+          // Retry 5xx only for idempotent requests
+          if (attempt + 1 < maxAttempts) {
             attempt++;
             const delay = backoffDelayMs * Math.pow(2, attempt);
             await this.sleep(delay);
@@ -93,8 +104,8 @@ export class ApiClient {
         }
 
       } catch (error) {
-        // If network error, retry
-        if (error instanceof TypeError && attempt + 1 < retries) {
+        // fetch() rejects with a TypeError on network failure; retry only when safe
+        if (error instanceof TypeError && attempt + 1 < maxAttempts) {
           attempt++;
           const delay = backoffDelayMs * Math.pow(2, attempt);
           await this.sleep(delay);

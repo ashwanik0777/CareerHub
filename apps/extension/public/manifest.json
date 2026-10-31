@@ -10,7 +10,18 @@
     "cookies"
   ],
   "host_permissions": [
-    "<all_urls>"
+    "http://localhost:3000/*",
+    "https://boards.greenhouse.io/*",
+    "https://*.greenhouse.io/*",
+    "https://jobs.lever.co/*",
+    "https://*.myworkdayjobs.com/*",
+    "https://www.linkedin.com/jobs/*",
+    "https://*.indeed.com/*",
+    "https://internshala.com/*",
+    "https://*.naukri.com/*"
+  ],
+  "optional_host_permissions": [
+    "https://*/*"
   ],
   "action": {
     "default_popup": "index.html",
@@ -27,7 +38,16 @@
   "options_page": "options.html",
   "content_scripts": [
     {
-      "matches": ["<all_urls>"],
+      "matches": [
+        "https://boards.greenhouse.io/*",
+        "https://*.greenhouse.io/*",
+        "https://jobs.lever.co/*",
+        "https://*.myworkdayjobs.com/*",
+        "https://www.linkedin.com/jobs/*",
+        "https://*.indeed.com/*",
+        "https://internshala.com/*",
+        "https://*.naukri.com/*"
+      ],
       "js": ["content.js"],
       "run_at": "document_idle",
       "all_frames": true

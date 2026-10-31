@@ -12,10 +12,17 @@ import { FieldDescriptor, MappingStrategy, EngineConfig } from './interfaces';
  * Fuse predictions from multiple strategies using weighted combination.
  *
  * For each unique attributeId across all strategy outputs:
- *   fusedScore = Σ (strategy.weight × prediction.confidence) / Σ weights
+ *   best   = max(prediction.confidence)                       (the floor)
+ *   support = Σ (strategy.weight × confidence) over the OTHER agreeing strategies
+ *   fused  = best + (1 − best) × support / Σ(all active strategy weights)
  *
- * The result is a normalized, deduplicated list of predictions sorted
- * by fused confidence.
+ * The strongest single strategy sets a floor so a strong exact match can never
+ * be dragged below the selection threshold by weak agreement, while every
+ * additional agreeing strategy raises the score in proportion to its weight.
+ * (A plain weighted mean would always be ≤ the max and therefore never change
+ * the ranking; a plain max would make the weights meaningless.)
+ *
+ * The result is a deduplicated list of predictions sorted by fused confidence.
  *
  * @param descriptor - The field being analyzed
  * @param strategies - Active mapping strategies
@@ -57,11 +64,14 @@ export function fuseStrategies(
       weightedSum: number;
       totalWeight: number;
       maxConfidence: number;
+      bestWeightedScore: number;
       bestSource: MappingSource;
       bestReasoning: string;
       sources: Array<{ attributeId: string; confidence: number; source: MappingSource }>;
     }
   > = new Map();
+
+  const totalStrategyWeight = strategies.reduce((sum, st) => sum + st.weight, 0);
 
   for (const { prediction, strategyWeight } of allPredictions) {
     const existing = fusedMap.get(prediction.attributeId);
@@ -71,6 +81,7 @@ export function fuseStrategies(
       // Keep the highest individual confidence source
       if (prediction.confidence > existing.maxConfidence) {
         existing.maxConfidence = prediction.confidence;
+        existing.bestWeightedScore = strategyWeight * prediction.confidence;
         existing.bestSource = prediction.source;
         existing.bestReasoning = prediction.reasoning;
       }
@@ -84,6 +95,7 @@ export function fuseStrategies(
         weightedSum: strategyWeight * prediction.confidence,
         totalWeight: strategyWeight,
         maxConfidence: prediction.confidence,
+        bestWeightedScore: strategyWeight * prediction.confidence,
         bestSource: prediction.source,
         bestReasoning: prediction.reasoning,
         sources: [
@@ -101,13 +113,12 @@ export function fuseStrategies(
   const fusedPredictions: FieldPrediction[] = [];
 
   for (const [attributeId, fused] of fusedMap.entries()) {
-    // Agreement between strategies may only raise a score, never lower it:
-    // a strong exact match (e.g. rule engine at 0.92) must not be dragged
-    // below the selection threshold by weakly-agreeing noisy strategies,
-    // so the strongest single-strategy confidence acts as a floor.
-    const weightedAverage = fused.totalWeight > 0 ? fused.weightedSum / fused.totalWeight : 0;
-    const fusedConfidence = Math.max(weightedAverage, fused.maxConfidence);
-    const clampedConfidence = Math.min(fusedConfidence, 1.0);
+    // Floor = strongest single strategy; agreement from the other strategies
+    // closes part of the remaining gap to 1.0 in proportion to their weights.
+    const support = Math.max(0, fused.weightedSum - fused.bestWeightedScore);
+    const agreement = totalStrategyWeight > 0 ? Math.min(1, support / totalStrategyWeight) : 0;
+    const fusedConfidence = fused.maxConfidence + (1 - fused.maxConfidence) * agreement;
+    const clampedConfidence = Math.min(Math.max(fusedConfidence, 0), 1.0);
 
     fusedPredictions.push({
       attributeId,
@@ -115,12 +126,22 @@ export function fuseStrategies(
       confidenceLevel: classifyConfidence(clampedConfidence, config),
       source: fused.bestSource,
       reasoning: `Hybrid fusion (${strategiesUsed.join(', ')}): ${fused.bestReasoning}`,
-      alternativeMappings: fused.sources.length > 1 ? fused.sources.slice(1) : undefined,
+      alternativeMappings: undefined, // filled below once all candidates are known
     });
   }
 
   // Sort by confidence descending
   fusedPredictions.sort((a, b) => b.confidence - a.confidence);
+
+  // Alternatives are the *other* candidate attributes (next best up to 3),
+  // not the same attribute as seen by other strategies.
+  for (let i = 0; i < fusedPredictions.length; i++) {
+    const alternatives = fusedPredictions
+      .filter((_, j) => j !== i)
+      .slice(0, 3)
+      .map((p) => ({ attributeId: p.attributeId, confidence: p.confidence, source: p.source }));
+    fusedPredictions[i]!.alternativeMappings = alternatives.length > 0 ? alternatives : undefined;
+  }
 
   return { predictions: fusedPredictions, strategiesUsed };
 }

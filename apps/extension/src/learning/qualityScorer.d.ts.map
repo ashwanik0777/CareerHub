@@ -1,1 +1,0 @@
-{"version":3,"file":"qualityScorer.d.ts","sourceRoot":"","sources":["qualityScorer.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,aAAa,EAAE,MAAM,0BAA0B,CAAC;AAEzD,qBAAa,aAAa;IACxB,MAAM,CAAC,KAAK,CACV,MAAM,EAAE,aAAa,CAAC,YAAY,CAAC,CAAC,QAAQ,CAAC,EAC7C,UAAU,EAAE,MAAM,EAClB,MAAM,EAAE,OAAO,GACd,aAAa,CAAC,cAAc,CAAC;CAuBjC"}

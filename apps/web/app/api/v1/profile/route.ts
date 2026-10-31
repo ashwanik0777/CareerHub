@@ -1,61 +1,40 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@platform/db';
+import { validateApiKey } from '@/lib/api-key-auth';
 
+/**
+ * Developer API v1: read the key owner's profile.
+ * Auth: `Authorization: Bearer <api key or OAuth access token>` with `profile:read`.
+ */
 export async function GET(request: Request) {
   try {
-    const authHeader = request.headers.get('Authorization');
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return NextResponse.json({ error: 'Unauthorized: Bearer token required' }, { status: 401 });
+    const auth = await validateApiKey(request, 'profile:read');
+    if (!auth.isValid || !auth.userId) {
+      const err = auth.errorResponse ?? { error: 'Unauthorized', status: 401 };
+      return NextResponse.json({ error: err.error }, { status: err.status });
     }
 
-    const apiKeyStr = authHeader.substring(7);
-
-    // Validate API Key
-    const apiKey = await prisma.apiKey.findUnique({
-      where: { key: apiKeyStr },
+    const profile = await prisma.profile.findUnique({
+      where: { userId: auth.userId },
       include: {
-        user: {
-          include: {
-            profile: {
-              include: {
-                experiences: true,
-                educations: true,
-                projects: true,
-                skills: true,
-                certifications: true,
-                awards: true,
-                languages: true,
-              },
-            },
-          },
-        },
+        experiences: { orderBy: { startDate: 'desc' } },
+        educations: { orderBy: { startDate: 'desc' } },
+        projects: { orderBy: { startDate: 'desc' } },
+        skills: { orderBy: { category: 'asc' } },
+        certifications: { orderBy: { issueDate: 'desc' } },
+        awards: { orderBy: { date: 'desc' } },
+        languages: { orderBy: { name: 'asc' } },
       },
     });
 
-    if (!apiKey) {
-      return NextResponse.json({ error: 'Unauthorized: Invalid API key' }, { status: 401 });
-    }
-
-    // Check scopes
-    if (!apiKey.scopes.includes('profile:read')) {
-      return NextResponse.json({ error: 'Forbidden: Insufficient scopes' }, { status: 403 });
-    }
-
-    // Check expiration
-    if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
-      return NextResponse.json({ error: 'Unauthorized: API key expired' }, { status: 401 });
-    }
-
-    const profile = apiKey.user.profile;
     if (!profile) {
       return NextResponse.json({ error: 'Profile not found' }, { status: 404 });
     }
 
-    // Return profile payload formatted nicely
     return NextResponse.json({
       success: true,
-      name: apiKey.user.name,
-      email: apiKey.user.email,
+      name: auth.name,
+      email: auth.email,
       profile: {
         headline: profile.headline,
         bio: profile.bio,
@@ -74,7 +53,8 @@ export async function GET(request: Request) {
         languages: profile.languages,
       },
     });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+  } catch (error) {
+    console.error('[v1/profile] error:', error);
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -12,6 +12,7 @@ export default function SettingsPage() {
   const [savingSettings, setSavingSettings] = React.useState(false);
   const [changingPassword, setChangingPassword] = React.useState(false);
   const [deletingAccount, setDeletingAccount] = React.useState(false);
+  const [deletePassword, setDeletePassword] = React.useState('');
   const [error, setError] = React.useState<string | null>(null);
   const [success, setSuccess] = React.useState<string | null>(null);
   const [formErrors, setFormErrors] = React.useState<Record<string, string[]>>({});
@@ -120,6 +121,10 @@ export default function SettingsPage() {
   };
 
   const handleDeleteAccount = async () => {
+    if (!deletePassword) {
+      setError('Enter your current password to delete your account.');
+      return;
+    }
     const confirmation = prompt('WARNING: This action is permanent. Type "DELETE My Account" to confirm account deletion:');
     if (confirmation !== 'DELETE My Account') {
       alert('Confirmation text did not match. Account deletion cancelled.');
@@ -132,9 +137,15 @@ export default function SettingsPage() {
     try {
       const res = await fetch('/api/settings/delete-account', {
         method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ password: deletePassword }),
       });
 
-      if (!res.ok) throw new Error('Failed to delete account');
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        const detail = data?.details?.password?.[0];
+        throw new Error(detail || data?.error || 'Failed to delete account');
+      }
 
       // Redirect to landing
       window.location.href = '/';
@@ -314,9 +325,20 @@ export default function SettingsPage() {
           <p className="text-zinc-600 dark:text-zinc-400">
             Deleting your account will remove your profile, work experience, resumes, and settings from our databases. This action cannot be undone.
           </p>
+          <div className="space-y-2 max-w-sm">
+            <Label htmlFor="deletePassword">Confirm with your current password</Label>
+            <Input
+              id="deletePassword"
+              type="password"
+              autoComplete="current-password"
+              value={deletePassword}
+              onChange={(e) => setDeletePassword(e.target.value)}
+              placeholder="Current password"
+            />
+          </div>
         </CardContent>
         <CardFooter className="pt-2">
-          <Button variant="destructive" onClick={handleDeleteAccount} disabled={deletingAccount}>
+          <Button variant="destructive" onClick={handleDeleteAccount} disabled={deletingAccount || !deletePassword}>
             {deletingAccount ? 'Deleting...' : 'Delete My Account'}
           </Button>
         </CardFooter>

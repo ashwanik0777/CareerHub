@@ -247,21 +247,27 @@ model Session {
   createdAt DateTime @default(now())
 
   @@index([userId])
-  @@index([token])
+  @@index([expiresAt])
 }
 
 model ApiKey {
-  id        String    @id @default(uuid())
-  userId    String
-  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  key       String    @unique
-  name      String
-  scopes    String[]  @default(["profile:read"])
-  expiresAt DateTime?
-  createdAt DateTime  @default(now())
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  /// SHA-256 hex digest of the key. The plaintext is shown once at creation and never stored.
+  keyHash    String    @unique
+  /// First characters of the key (e.g. "chk_a1b2") so users can recognise which key is which.
+  keyPrefix  String
+  name       String
+  scopes     String[]  @default(["profile:read"])
+  /// Set when the key was minted by the OAuth token endpoint.
+  oauthClientId String?
+  expiresAt  DateTime?
+  lastUsedAt DateTime?
+  createdAt  DateTime  @default(now())
 
   @@index([userId])
-  @@index([key])
+  @@index([oauthClientId])
 }
 
 model AuditLog {
@@ -335,17 +341,35 @@ model Subscription {
 }
 
 model OauthClient {
-  id           String         @id @default(uuid())
-  userId       String
-  user         User           @relation(fields: [userId], references: [id], onDelete: Cascade)
-  clientId     String         @unique
-  clientSecret String
-  name         String
-  redirectUris String[]
-  createdAt    DateTime       @default(now())
-  consents     OauthConsent[]
+  id               String                   @id @default(uuid())
+  userId           String
+  user             User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  clientId         String                   @unique
+  /// SHA-256 hex digest of the client secret; plaintext is returned once at registration.
+  clientSecretHash String
+  name             String
+  redirectUris     String[]
+  createdAt        DateTime                 @default(now())
+  consents         OauthConsent[]
+  authCodes        OauthAuthorizationCode[]
 
   @@index([userId])
+}
+
+/// Short-lived, single-use authorization code (RFC 6749 §4.1). Stored hashed.
+model OauthAuthorizationCode {
+  id          String      @id @default(uuid())
+  codeHash    String      @unique
+  clientId    String
+  client      OauthClient @relation(fields: [clientId], references: [clientId], onDelete: Cascade)
+  userId      String
+  redirectUri String
+  scopes      String[]
+  expiresAt   DateTime
+  usedAt      DateTime?
+  createdAt   DateTime    @default(now())
+
+  @@index([expiresAt])
 }
 
 model OauthConsent {

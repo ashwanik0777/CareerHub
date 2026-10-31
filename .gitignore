@@ -25,3 +25,12 @@ apps/careerhub_production_model/
 *.log
 .vscode/
 .idea/
+
+# TypeScript incremental build info
+*.tsbuildinfo
+
+# Extension sources are bundled by Vite; never commit tsc output next to them
+apps/extension/src/**/*.js
+apps/extension/src/**/*.js.map
+apps/extension/src/**/*.d.ts
+apps/extension/src/**/*.d.ts.map

@@ -55,6 +55,27 @@ function getFieldText(descriptor: FieldDescriptor): string {
  * the tokenized field text and the tokenized alias set. Returns the
  * top-5 matches above a minimum threshold.
  */
+interface AliasIndexEntry {
+  attributeId: string;
+  tokens: Set<string>;
+}
+
+/**
+ * Alias token sets are a pure function of the (static) ontology, so they are
+ * tokenized exactly once per process instead of on every analyze() call.
+ */
+let aliasIndex: AliasIndexEntry[] | null = null;
+
+function getAliasIndex(): AliasIndexEntry[] {
+  if (!aliasIndex) {
+    aliasIndex = getAllAttributes().map((attr) => ({
+      attributeId: attr.id,
+      tokens: new Set(tokenize([attr.label, ...attr.aliases].join(' '))),
+    }));
+  }
+  return aliasIndex;
+}
+
 export class KeywordMatcherStrategy implements MappingStrategy {
   readonly name = 'keyword_matcher';
   readonly weight = 0.20;
@@ -69,17 +90,12 @@ export class KeywordMatcherStrategy implements MappingStrategy {
     if (fieldTokens.size === 0) return [];
 
     const candidates: Array<{ attributeId: string; similarity: number }> = [];
-    const attributes = getAllAttributes();
 
-    for (const attr of attributes) {
-      // Tokenize all aliases + label for this attribute
-      const aliasText = [attr.label, ...attr.aliases].join(' ');
-      const aliasTokens = new Set(tokenize(aliasText));
-
-      const similarity = jaccardSimilarity(fieldTokens, aliasTokens);
+    for (const attr of getAliasIndex()) {
+      const similarity = jaccardSimilarity(fieldTokens, attr.tokens);
 
       if (similarity > this.minThreshold) {
-        candidates.push({ attributeId: attr.id, similarity });
+        candidates.push({ attributeId: attr.attributeId, similarity });
       }
     }
 

@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation';
 import { prisma } from '@platform/db';
-import { getSession } from '@/lib/auth-server';
+import { getSession, getCurrentUser } from '@/lib/auth-server';
 import { hasRequiredRole } from '@/lib/auth';
 import { Role } from '@platform/types';
 import {
@@ -29,7 +29,7 @@ export default async function AdminPage() {
     redirect('/login');
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.userId } });
+  const user = await getCurrentUser();
   if (!user || !hasRequiredRole(user.role as Role, Role.ADMIN)) {
     redirect('/dashboard');
   }

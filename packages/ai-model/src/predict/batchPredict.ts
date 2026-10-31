@@ -56,8 +56,8 @@ export async function predictFieldBatch(fields: AiFieldDescriptor[]): Promise<Pr
   const elapsed = timer();
   const perFieldTime = parseFloat((elapsed / missIndexes.length).toFixed(2));
 
-  // Record average latency telemetry
-  modelLoader.recordLatency(elapsed);
+  // Record latency telemetry per field so avgLatencyMs stays per-prediction
+  modelLoader.recordLatency(elapsed, missIndexes.length);
 
   for (let m = 0; m < missIndexes.length; m++) {
     const offset = m * numClasses;

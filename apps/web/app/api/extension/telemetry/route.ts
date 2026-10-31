@@ -1,50 +1,34 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@platform/db';
 import { getSession } from '@/lib/auth-server';
-import { hasRequiredRole } from '@/lib/auth';
-import { Role } from '@platform/types';
+import { telemetrySchema } from '@platform/validation';
 
-/**
- * Strips PII from telemetry data before persisting.
- * Removes userId linkage from mappingDetails and sanitises pageUrl.
- */
-function stripPii(data: Record<string, any>): Record<string, any> {
-  const sanitised = { ...data };
+const PII_KEY_FRAGMENTS = ['email', 'phone', 'name', 'address', 'ssn', 'password', 'token', 'passport', 'salary', 'dob', 'birth'];
 
-  // Remove raw pageUrl query params (may contain tokens/emails)
-  if (typeof sanitised.pageUrl === 'string') {
-    try {
-      const url = new URL(sanitised.pageUrl);
-      url.search = '';
-      url.hash = '';
-      sanitised.pageUrl = url.toString();
-    } catch {
-      // If not a valid URL, keep as-is
+/** Strips query/hash from a page URL (may carry tokens or emails). */
+function sanitisePageUrl(pageUrl: string): string {
+  try {
+    const url = new URL(pageUrl);
+    url.search = '';
+    url.hash = '';
+    return url.toString();
+  } catch {
+    return pageUrl;
+  }
+}
+
+/** Recursively redacts any key that looks like it holds personal data. */
+function scrubPii(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(scrubPii);
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {};
+    for (const [k, v] of Object.entries(value as Record<string, unknown>)) {
+      const lower = k.toLowerCase();
+      out[k] = PII_KEY_FRAGMENTS.some((pk) => lower.includes(pk)) ? '[REDACTED]' : scrubPii(v);
     }
+    return out;
   }
-
-  // Scrub mappingDetails of any embedded PII fields
-  if (sanitised.mappingDetails && typeof sanitised.mappingDetails === 'object') {
-    const scrubbed = JSON.parse(JSON.stringify(sanitised.mappingDetails));
-    const piiKeys = ['email', 'phone', 'name', 'address', 'ssn', 'password', 'token'];
-    const scrubObject = (obj: any) => {
-      if (Array.isArray(obj)) {
-        obj.forEach(scrubObject);
-      } else if (obj && typeof obj === 'object') {
-        for (const key of Object.keys(obj)) {
-          if (piiKeys.some((pk) => key.toLowerCase().includes(pk))) {
-            obj[key] = '[REDACTED]';
-          } else {
-            scrubObject(obj[key]);
-          }
-        }
-      }
-    };
-    scrubObject(scrubbed);
-    sanitised.mappingDetails = scrubbed;
-  }
-
-  return sanitised;
+  return value;
 }
 
 export async function POST(request: Request) {
@@ -52,75 +36,40 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json();
-
-    if (!body.platform || !body.pageUrl) {
+    const body = await request.json().catch(() => null);
+    const result = telemetrySchema.safeParse(body);
+    if (!result.success) {
       return NextResponse.json(
-        { error: 'Validation failed', details: { platform: !body.platform ? ['Required'] : [], pageUrl: !body.pageUrl ? ['Required'] : [] } },
-        { status: 400 },
+        { error: 'Validation failed', details: result.error.flatten().fieldErrors },
+        { status: 400 }
       );
     }
 
-    const sanitisedData = stripPii(body);
+    const data = result.data;
 
     const telemetryEntry = await prisma.autofillSession.create({
       data: {
         userId: session.userId,
-        platform: sanitisedData.platform,
-        pageUrl: sanitisedData.pageUrl,
-        totalFields: sanitisedData.totalFields ?? 0,
-        detectedFields: sanitisedData.detectedFields ?? 0,
-        filledFields: sanitisedData.filledFields ?? 0,
-        skippedFields: sanitisedData.skippedFields ?? 0,
-        userCorrections: sanitisedData.userCorrections ?? 0,
-        highConfidence: sanitisedData.highConfidence ?? 0,
-        mediumConfidence: sanitisedData.mediumConfidence ?? 0,
-        lowConfidence: sanitisedData.lowConfidence ?? 0,
-        avgConfidence: sanitisedData.avgConfidence ?? 0,
-        executionTimeMs: sanitisedData.executionTimeMs ?? 0,
-        mappingDetails: sanitisedData.mappingDetails ?? null,
+        platform: data.platform,
+        pageUrl: sanitisePageUrl(data.pageUrl),
+        totalFields: data.totalFields,
+        detectedFields: data.detectedFields,
+        filledFields: data.filledFields,
+        skippedFields: data.skippedFields,
+        userCorrections: data.userCorrections,
+        highConfidence: data.highConfidence,
+        mediumConfidence: data.mediumConfidence,
+        lowConfidence: data.lowConfidence,
+        avgConfidence: data.avgConfidence,
+        executionTimeMs: data.executionTimeMs,
+        mappingDetails: data.mappingDetails == null ? undefined : (scrubPii(data.mappingDetails) as object),
       },
+      select: { id: true, createdAt: true },
     });
 
     return NextResponse.json({ telemetry: telemetryEntry });
   } catch (error) {
     console.error('Store telemetry error:', error);
-    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
-  }
-}
-
-export async function GET(request: Request) {
-  try {
-    const session = await getSession();
-    if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-
-    // Admin-only access
-    const user = await prisma.user.findUnique({ where: { id: session.userId } });
-    if (!user || !hasRequiredRole(user.role as Role, Role.ADMIN)) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
-
-    const { searchParams } = new URL(request.url);
-    const platform = searchParams.get('platform');
-    const limit = Math.min(parseInt(searchParams.get('limit') ?? '50', 10), 200);
-    const offset = parseInt(searchParams.get('offset') ?? '0', 10);
-
-    const where: Record<string, any> = {};
-    if (platform) where.platform = platform;
-
-    const [entries, total] = await Promise.all([
-      prisma.autofillSession.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        skip: offset,
-      }),
-      prisma.autofillSession.count({ where }),
-    ]);
-
-    return NextResponse.json({ entries, total, limit, offset });
-  } catch (error) {
-    console.error('Fetch telemetry error:', error);
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

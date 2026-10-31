@@ -143,24 +143,10 @@ export function detectWebsite(url: string): WebsiteRule | null {
   };
 }
 
-// ────────────────────────────────────────────────────────────────────────────
-// Configurable Backend URL
-// ────────────────────────────────────────────────────────────────────────────
+// Backend URL configuration lives in ./backend-config (validated, single source).
+export { getBackendUrl, DEFAULT_BACKEND_URL } from './backend-config';
 
-const DEFAULT_BACKEND_URL = 'http://localhost:3000';
-
-/**
- * Get the backend URL, checking chrome.storage for a configured override.
- * Falls back to localhost:3000 for development.
- */
-export async function getBackendUrl(): Promise<string> {
-  if (typeof chrome === 'undefined' || !chrome.storage) {
-    return DEFAULT_BACKEND_URL;
-  }
-
-  return new Promise((resolve) => {
-    chrome.storage.local.get(['backend_url'], (result) => {
-      resolve(result.backend_url || DEFAULT_BACKEND_URL);
-    });
-  });
+/** True when the URL belongs to a site with dedicated rules (not the generic fallback). */
+export function isSupportedWebsite(url: string): boolean {
+  return SUPPORTED_WEBSITES.some((site) => site.urlPattern.test(url));
 }

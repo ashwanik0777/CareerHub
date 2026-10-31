@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@platform/db';
+import { prisma, Prisma } from '@platform/db';
 import { registerSchema } from '@platform/validation';
-import { createSession } from '@/lib/auth-server';
+import { createSession, getRequestMeta } from '@/lib/auth-server';
 
 export async function POST(request: Request) {
   try {
-    const body = await request.json();
+    const body = await request.json().catch(() => null);
     const result = registerSchema.safeParse(body);
 
     if (!result.success) {
@@ -17,72 +17,48 @@ export async function POST(request: Request) {
     }
 
     const { email, password, name } = result.data;
-
-    const existingUser = await prisma.user.findUnique({
-      where: { email },
-    });
-
-    if (existingUser) {
-      return NextResponse.json(
-        { error: 'Email already registered' },
-        { status: 400 }
-      );
-    }
-
     const passwordHash = await bcrypt.hash(password, 10);
 
-    const user = await prisma.$transaction(async (tx) => {
-      const newUser = await tx.user.create({
+    let user;
+    try {
+      user = await prisma.user.create({
         data: {
           email,
           passwordHash,
           name,
+          profile: { create: {} },
+          settings: { create: {} },
         },
       });
+    } catch (e) {
+      // Unique-constraint race (two registrations for the same email at once)
+      // or an existing account: both are a 400, never a 500.
+      if (e instanceof Prisma.PrismaClientKnownRequestError && e.code === 'P2002') {
+        return NextResponse.json({ error: 'Email already registered' }, { status: 400 });
+      }
+      throw e;
+    }
 
-      await tx.profile.create({
+    const { userAgent, ipAddress } = getRequestMeta(request);
+
+    await Promise.all([
+      createSession(user.id, user.email, user.name, userAgent, ipAddress),
+      prisma.auditLog.create({
         data: {
-          userId: newUser.id,
+          userId: user.id,
+          action: 'USER_REGISTERED',
+          ipAddress,
+          userAgent,
+          details: JSON.stringify({ email: user.email }),
         },
-      });
-
-      await tx.accountSettings.create({
-        data: {
-          userId: newUser.id,
-        },
-      });
-
-      return newUser;
-    });
-
-    const userAgent = request.headers.get('user-agent') || undefined;
-    const ipAddress = request.headers.get('x-forwarded-for') || undefined;
-
-    await createSession(user.id, user.email, user.name, userAgent, ipAddress);
-
-    // Audit log
-    await prisma.auditLog.create({
-      data: {
-        userId: user.id,
-        action: 'USER_REGISTERED',
-        ipAddress,
-        userAgent,
-        details: JSON.stringify({ email: user.email }),
-      },
-    });
+      }),
+    ]);
 
     return NextResponse.json({
-      user: {
-        id: user.id,
-        email: user.email,
-        name: user.name,
-      },
+      user: { id: user.id, email: user.email, name: user.name },
     });
   } catch (error) {
     console.error('Registration error:', error);
-    return NextResponse.json(
-      { error: 'Internal Server Error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }
 }

@@ -1,1 +1,0 @@
-{"version":3,"file":"feedbackCollector.d.ts","sourceRoot":"","sources":["feedbackCollector.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,OAAO,EAAE,aAAa,EAAE,MAAM,0BAA0B,CAAC;AAGzD,qBAAa,iBAAiB;IAC5B,OAAO,CAAC,MAAM,CAAC,cAAc,CAIxB;IAEL,MAAM,CAAC,OAAO,CACZ,OAAO,EAAE,WAAW,EACpB,QAAQ,EAAE,aAAa,CAAC,UAAU,CAAC,EACnC,UAAU,EAAE,aAAa,CAAC,cAAc,CAAC,EACzC,aAAa,EAAE,MAAM;CA6CxB"}

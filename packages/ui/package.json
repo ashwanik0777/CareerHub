@@ -5,7 +5,8 @@
   "main": "./src/index.tsx",
   "types": "./src/index.tsx",
   "scripts": {
-    "build": "tsc"
+    "build": "tsc",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "clsx": "^2.1.0",

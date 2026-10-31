@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "tsc --noEmit",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@platform/db": "workspace:*",
@@ -14,7 +15,6 @@
     "@platform/ui": "workspace:*",
     "@platform/validation": "workspace:*",
     "@platform/utils": "workspace:*",
-    "@platform/api-client": "workspace:*",
     "@platform/ai-model": "workspace:*",
     "@platform/semantic-engine": "workspace:*",
     "@huggingface/transformers": "^4.2.0",

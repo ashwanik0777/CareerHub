@@ -1,8 +1,7 @@
 import * as React from 'react';
 import { redirect } from 'next/navigation';
-import { getSession } from '@/lib/auth-server';
+import { getSession, getCurrentUser } from '@/lib/auth-server';
 import { hasRequiredRole } from '@/lib/auth';
-import { prisma } from '@platform/db';
 import { Role } from '@platform/types';
 import { LayoutDashboard, User, FileText, Settings, LogOut, Shield, ShieldCheck } from 'lucide-react';
 import { BRANDING } from '@platform/utils';
@@ -17,7 +16,7 @@ export default async function DashboardLayout({
     redirect('/login');
   }
 
-  const dbUser = await prisma.user.findUnique({ where: { id: session.userId } });
+  const dbUser = await getCurrentUser();
   const isAdmin = !!dbUser && hasRequiredRole(dbUser.role as Role, Role.ADMIN);
 
   const initial = session.name ? session.name.charAt(0).toUpperCase() : 'U';

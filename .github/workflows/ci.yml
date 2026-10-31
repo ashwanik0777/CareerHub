@@ -15,15 +15,15 @@ jobs:
       - name: Checkout Source Code
         uses: actions/checkout@v4
 
+      - name: Install pnpm Package Manager
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10.14.0
+
       - name: Setup Node.js Runtime
         uses: actions/setup-node@v4
         with:
-          node-version: 20
-
-      - name: Install pnpm Package Manager
-        uses: pnpm/action-setup@v3
-        with:
-          version: 8
+          node-version: 22
 
       - name: Get pnpm Cache Directory
         shell: bash
@@ -44,5 +44,15 @@ jobs:
       - name: Generate Database Prisma Client
         run: pnpm --filter @platform/db db:generate
 
+      - name: Type-check all workspaces
+        run: pnpm typecheck
+
+      - name: Semantic engine benchmark gate
+        run: pnpm --filter @platform/semantic-engine test
+
       - name: Run Build Verifications
         run: pnpm build
+        env:
+          # Build-time only: proxy/auth-server refuse to start without a secret.
+          JWT_SECRET: ci-only-placeholder-secret-not-for-production-0000
+          DATABASE_URL: postgresql://ci:ci@localhost:5432/ci?schema=public

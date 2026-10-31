@@ -4,7 +4,7 @@
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "jsx": "react-jsx",
-    "noEmit": false
+    "noEmit": true
   },
   "include": ["src/**/*"]
 }

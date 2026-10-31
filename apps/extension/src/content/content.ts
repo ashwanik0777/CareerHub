@@ -1,13 +1,19 @@
 import { DynamicDOMObserver } from './dom/observer';
-import { scanDomForFields } from './dom/scanner';
 import { mapPredictionToValue } from './ai/mapping';
 import { AutofillEngine } from '../autofill/autofillEngine';
 import { HighlightEngine } from '../autofill/highlightEngine';
 import { safeAddMessageListener, isContextValid } from './safe-chrome';
 import { FIELD_KEYWORDS, getLabelForElement } from './heuristics';
-import { querySelectorAllDeep, getAllFormElements } from './dom/shadowdom';
+import { querySelectorAllDeep, getAllFormElements, collectShadowRoots } from './dom/shadowdom';
 
-console.log('Autofill Engine: Content script listener online (v5 — Direct Heuristic Fill).');
+/** Fields that must never be auto-filled, whatever the heuristics say. */
+const SENSITIVE_FIELD_PATTERN = /password|csrf|token|captcha|otp|cvv|credit|card|payment|secret|pin\b/i;
+
+function isSensitiveField(element: Element): boolean {
+  const nameId = `${(element as HTMLInputElement).name || ''} ${element.id || ''}`.toLowerCase();
+  const type = ((element as HTMLInputElement).type || '').toLowerCase();
+  return type === 'password' || SENSITIVE_FIELD_PATTERN.test(nameId);
+}
 
 let activeProfileData: any = null;
 let activeResumeData: any = null;
@@ -141,8 +147,10 @@ async function executeDirectAutofill(profile: any, resume?: any) {
   activeProfileData = profile;
   activeResumeData = resume;
 
-  // Step 1: Collect all form fields on the page
-  const allElements = getAllFormElements();
+  // Step 1: Collect all form fields on the page. Shadow roots are walked ONCE
+  // here and reused by every selector query below.
+  const shadowRoots = collectShadowRoots(document);
+  const allElements = getAllFormElements(document, shadowRoots);
   const totalFields = allElements.length;
   let filledFieldsCount = 0;
   const filledKeys: string[] = [];
@@ -154,8 +162,8 @@ async function executeDirectAutofill(profile: any, resume?: any) {
   if (siteOverrides) {
     for (const [selector, profileKey] of Object.entries(siteOverrides)) {
       try {
-        const el = querySelectorAllDeep(selector)[0] as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
-        if (el && !processedElements.has(el)) {
+        const el = querySelectorAllDeep(selector, document, shadowRoots)[0] as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
+        if (el && !processedElements.has(el) && !isSensitiveField(el)) {
           const value = mapPredictionToValue(profileKey, profile, resume, {
             visibleLabel: getLabelForElement(el),
             placeholder: 'placeholder' in el ? (el as any).placeholder || '' : '',
@@ -190,9 +198,8 @@ async function executeDirectAutofill(profile: any, resume?: any) {
       if (style.display === 'none' || style.visibility === 'hidden' || style.opacity === '0') continue;
     } catch { continue; }
 
-    // Security: skip password, CSRF, etc.
-    const nameId = `${element.name || ''} ${element.id || ''}`.toLowerCase();
-    if (/password|csrf|token|captcha|otp|cvv|credit|card|payment/i.test(nameId)) continue;
+    // Security: skip password, CSRF, payment, etc.
+    if (isSensitiveField(element)) continue;
 
     const identification = identifyField(element);
     if (!identification) continue;
@@ -227,7 +234,7 @@ async function executeDirectAutofill(profile: any, resume?: any) {
     if (!isContextValid() || !activeProfileData) return;
     for (const field of newFields) {
       const el = field.element;
-      if (processedElements.has(el)) continue;
+      if (processedElements.has(el) || isSensitiveField(el)) continue;
       const id = identifyField(el as any);
       if (!id) continue;
       const val = mapPredictionToValue(id.mappedKey, activeProfileData, activeResumeData, {
@@ -242,8 +249,8 @@ async function executeDirectAutofill(profile: any, resume?: any) {
       }
     }
   });
-  const scannedFields = scanDomForFields();
-  domObserver.markProcessed(scannedFields.map(f => f.element));
+  // Everything already on the page has been considered; only NEW nodes matter.
+  domObserver.markProcessed(allElements);
   domObserver.start();
 
   return {

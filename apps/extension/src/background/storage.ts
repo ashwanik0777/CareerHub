@@ -3,9 +3,12 @@
  * Handles getting and setting Profile Cache, Settings, and Analytics data.
  */
 
+import { getBackendUrl } from '../utils/backend-config';
+
 export interface AppSettings {
   theme: 'system' | 'light' | 'dark';
-  apiEndpoint: string;
+  /** Backend origin, e.g. "https://app.example.com" (validated, no path). */
+  backendUrl: string;
 }
 
 export interface ProfileCache {
@@ -14,22 +17,17 @@ export interface ProfileCache {
   lastUpdated: number;
 }
 
-const DEFAULT_SETTINGS: AppSettings = {
-  theme: 'system',
-  apiEndpoint: 'http://localhost:3000/api/ai', // Default local development endpoint
-};
-
 export class StorageService {
   /**
-   * Get application settings from sync storage
+   * Get application settings (theme from sync storage, backend from the
+   * validated backend-config module).
    */
   static async getSettings(): Promise<AppSettings> {
+    const backendUrl = await getBackendUrl();
     return new Promise((resolve) => {
-      chrome.storage.sync.get(['theme', 'apiEndpoint'], (result) => {
-        resolve({
-          theme: result.theme || DEFAULT_SETTINGS.theme,
-          apiEndpoint: result.apiEndpoint || DEFAULT_SETTINGS.apiEndpoint,
-        });
+      chrome.storage.sync.get(['theme'], (result) => {
+        const theme = result.theme === 'light' || result.theme === 'dark' ? result.theme : 'system';
+        resolve({ theme, backendUrl });
       });
     });
   }
@@ -58,6 +56,15 @@ export class StorageService {
       chrome.storage.local.set({ profileCache: cache }, () => {
         resolve();
       });
+    });
+  }
+
+  /**
+   * Drop every piece of cached account data (profile, resumes, fallback token).
+   */
+  static async clearSessionData(): Promise<void> {
+    return new Promise((resolve) => {
+      chrome.storage.local.remove(['profileCache', 'session_token'], () => resolve());
     });
   }
 }

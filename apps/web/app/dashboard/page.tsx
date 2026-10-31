@@ -13,32 +13,31 @@ export default async function DashboardPage() {
   const session = await getSession();
   if (!session) return null;
 
-  // Fetch profile, audit logs, notifications and resume counts
-  const profile = await prisma.profile.findUnique({
-    where: { userId: session.userId },
-    include: {
-      experiences: true,
-      educations: true,
-      projects: true,
-      skills: true,
-    },
-  });
-
-  const auditLogs = await prisma.auditLog.findMany({
-    where: { userId: session.userId },
-    orderBy: { createdAt: 'desc' },
-    take: 5,
-  });
-
-  const notifications = await prisma.notification.findMany({
-    where: { userId: session.userId, isRead: false },
-    orderBy: { createdAt: 'desc' },
-    take: 3,
-  });
-
-  const resumeCount = await prisma.resume.count({
-    where: { userId: session.userId }
-  });
+  // Fetch profile, audit logs, notifications and resume count in parallel
+  const [profile, auditLogs, notifications, resumeCount] = await Promise.all([
+    prisma.profile.findUnique({
+      where: { userId: session.userId },
+      include: {
+        experiences: true,
+        educations: true,
+        projects: true,
+        skills: true,
+      },
+    }),
+    prisma.auditLog.findMany({
+      where: { userId: session.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 5,
+    }),
+    prisma.notification.findMany({
+      where: { userId: session.userId, isRead: false },
+      orderBy: { createdAt: 'desc' },
+      take: 3,
+    }),
+    prisma.resume.count({
+      where: { userId: session.userId },
+    }),
+  ]);
 
   // Calculate completion
   const completion = profile 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { optionalHttpUrl, requiredDate, optionalDate } from './common';
 
 export const personalInfoSchema = z.object({
   headline: z.string().max(200, 'Headline must be 200 characters or less').nullable().optional(),
@@ -6,15 +7,15 @@ export const personalInfoSchema = z.object({
   location: z.string().max(100, 'Location must be 100 characters or less').nullable().optional(),
   preferredLocation: z.string().max(100, 'Preferred location must be 100 characters or less').nullable().optional(),
   availability: z.string().max(100, 'Availability must be 100 characters or less').nullable().optional(),
-  websiteUrl: z.string().url('Invalid website URL').or(z.literal('')).nullable().optional(),
-  githubUrl: z.string().url('Invalid GitHub URL').or(z.literal('')).nullable().optional(),
-  linkedinUrl: z.string().url('Invalid LinkedIn URL').or(z.literal('')).nullable().optional(),
+  websiteUrl: optionalHttpUrl('Invalid website URL'),
+  githubUrl: optionalHttpUrl('Invalid GitHub URL'),
+  linkedinUrl: optionalHttpUrl('Invalid LinkedIn URL'),
   // Identity & contact fields job portals ask for during applications
   firstName: z.string().max(100, 'First name must be 100 characters or less').nullable().optional(),
   lastName: z.string().max(100, 'Last name must be 100 characters or less').nullable().optional(),
   phone: z.string().max(30, 'Phone must be 30 characters or less').nullable().optional(),
   alternatePhone: z.string().max(30, 'Alternate phone must be 30 characters or less').nullable().optional(),
-  alternateEmail: z.string().email('Invalid email').or(z.literal('')).nullable().optional(),
+  alternateEmail: z.string().trim().max(254).email('Invalid email').or(z.literal('')).nullable().optional(),
   dateOfBirth: z.string().max(20, 'Date of birth must be 20 characters or less').nullable().optional(),
   gender: z.string().max(30, 'Gender must be 30 characters or less').nullable().optional(),
   nationality: z.string().max(100, 'Nationality must be 100 characters or less').nullable().optional(),
@@ -33,19 +34,16 @@ export const personalInfoSchema = z.object({
   expectedSalary: z.string().max(50, 'Expected salary must be 50 characters or less').nullable().optional(),
   noticePeriod: z.string().max(50, 'Notice period must be 50 characters or less').nullable().optional(),
   workAuthorization: z.string().max(100, 'Work authorization must be 100 characters or less').nullable().optional(),
-  twitterUrl: z.string().url('Invalid Twitter/X URL').or(z.literal('')).nullable().optional(),
-  portfolioUrl: z.string().url('Invalid Portfolio URL').or(z.literal('')).nullable().optional(),
+  twitterUrl: optionalHttpUrl('Invalid Twitter/X URL'),
+  portfolioUrl: optionalHttpUrl('Invalid Portfolio URL'),
 });
 
 export const experienceSchema = z.object({
   company: z.string().min(1, 'Company name is required').max(100),
   position: z.string().min(1, 'Position title is required').max(100),
   location: z.string().max(100).nullable().optional(),
-  startDate: z.coerce.date({ required_error: 'Start date is required' }),
-  endDate: z.preprocess(
-    (val) => (val === '' || val === undefined ? null : val),
-    z.coerce.date().nullable().optional()
-  ),
+  startDate: requiredDate('Start date is required'),
+  endDate: optionalDate(),
   isCurrent: z.boolean().default(false),
   type: z.enum(['FULL_TIME', 'PART_TIME', 'CONTRACT', 'INTERNSHIP', 'FREELANCE']).default('FULL_TIME'),
   description: z.string().max(2000).nullable().optional(),
@@ -66,11 +64,8 @@ export const educationSchema = z.object({
   school: z.string().min(1, 'School name is required').max(100),
   degree: z.string().min(1, 'Degree is required').max(100),
   fieldOfStudy: z.string().min(1, 'Field of study is required').max(100),
-  startDate: z.coerce.date({ required_error: 'Start date is required' }),
-  endDate: z.preprocess(
-    (val) => (val === '' || val === undefined ? null : val),
-    z.coerce.date().nullable().optional()
-  ),
+  startDate: requiredDate('Start date is required'),
+  endDate: optionalDate(),
   isCurrent: z.boolean().default(false),
   grade: z.string().max(20).nullable().optional(),
   description: z.string().max(2000).nullable().optional(),
@@ -90,11 +85,11 @@ export const educationSchema = z.object({
 export const projectSchema = z.object({
   title: z.string().min(1, 'Project title is required').max(100),
   description: z.string().min(1, 'Description is required').max(1000),
-  url: z.string().url('Invalid project URL').or(z.literal('')).nullable().optional(),
-  githubUrl: z.string().url('Invalid GitHub URL').or(z.literal('')).nullable().optional(),
-  startDate: z.coerce.date().nullable().optional(),
-  endDate: z.coerce.date().nullable().optional(),
-  technologies: z.array(z.string()).default([]),
+  url: optionalHttpUrl('Invalid project URL'),
+  githubUrl: optionalHttpUrl('Invalid GitHub URL'),
+  startDate: optionalDate(),
+  endDate: optionalDate(),
+  technologies: z.array(z.string().trim().min(1).max(50)).max(30, 'At most 30 technologies').default([]),
 }).refine((data) => {
   if (data.startDate && data.endDate && data.startDate > data.endDate) {
     return false;
@@ -114,10 +109,10 @@ export const skillSchema = z.object({
 export const certificationSchema = z.object({
   name: z.string().min(1, 'Certification name is required').max(100),
   issuer: z.string().min(1, 'Issuer is required').max(100),
-  issueDate: z.coerce.date({ required_error: 'Issue date is required' }),
-  expiryDate: z.coerce.date().nullable().optional(),
+  issueDate: requiredDate('Issue date is required'),
+  expiryDate: optionalDate(),
   credentialId: z.string().max(100).nullable().optional(),
-  credentialUrl: z.string().url('Invalid credential URL').or(z.literal('')).nullable().optional(),
+  credentialUrl: optionalHttpUrl('Invalid credential URL'),
 }).refine((data) => {
   if (data.issueDate && data.expiryDate && data.issueDate > data.expiryDate) {
     return false;
@@ -131,7 +126,7 @@ export const certificationSchema = z.object({
 export const awardSchema = z.object({
   title: z.string().min(1, 'Award title is required').max(100),
   issuer: z.string().min(1, 'Issuer is required').max(100),
-  date: z.coerce.date({ required_error: 'Date received is required' }),
+  date: requiredDate('Date received is required'),
   description: z.string().max(1000).nullable().optional(),
 });
 

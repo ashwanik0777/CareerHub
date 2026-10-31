@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc",
     "smoke": "tsx scripts/smoke.ts",
-    "validate:template": "tsx scripts/validate-template.ts"
+    "validate:template": "tsx scripts/validate-template.ts",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",

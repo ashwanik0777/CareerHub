@@ -1,1 +1,0 @@
-{"version":3,"file":"feedback.d.ts","sourceRoot":"","sources":["feedback.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAIH,qBAAa,cAAc;IACzB,MAAM,CAAC,cAAc,CAAC,cAAc,EAAE,MAAM,EAAE,KAAK,EAAE,MAAM;IAI3D,MAAM,CAAC,cAAc,CAAC,cAAc,EAAE,MAAM,EAAE,KAAK,EAAE,MAAM;IAI3D,MAAM,CAAC,eAAe,CAAC,OAAO,EAAE,WAAW,EAAE,sBAAsB,EAAE,MAAM;CAqC5E"}

@@ -139,9 +139,6 @@ importers:
       '@platform/ai-model':
         specifier: workspace:*
         version: link:../../packages/ai-model
-      '@platform/api-client':
-        specifier: workspace:*
-        version: link:../../packages/api-client
       '@platform/db':
         specifier: workspace:*
         version: link:../../packages/db
@@ -297,6 +294,9 @@ importers:
       '@platform/config':
         specifier: workspace:*
         version: link:../config
+      tsx:
+        specifier: ^4.23.1
+        version: 4.23.1
       typescript:
         specifier: ^5.0.0
         version: 5.9.3

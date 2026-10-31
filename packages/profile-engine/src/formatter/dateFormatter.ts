@@ -25,8 +25,9 @@ export class DateFormatter {
         if (monthStr && yearStr) {
           const month = parseInt(monthStr, 10);
           const year = parseInt(yearStr, 10);
-          if (month >= 1 && month <= 12 && year > 1900) {
-            return new Date(year, month - 1, 1);
+          if (month >= 1 && month <= 12 && year >= 1900 && year <= 2100) {
+            // UTC so toISOString() does not shift to the previous day/month in UTC+ zones
+            return new Date(Date.UTC(year, month - 1, 1));
           }
         }
       }
@@ -49,8 +50,8 @@ export class DateFormatter {
     const date = this.toDate(value);
     if (!date) return null;
     
-    const month = (date.getMonth() + 1).toString().padStart(2, '0');
-    const year = date.getFullYear();
+    const month = (date.getUTCMonth() + 1).toString().padStart(2, '0');
+    const year = date.getUTCFullYear();
     return `${month}/${year}`;
   }
 }

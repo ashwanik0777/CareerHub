@@ -1,1 +1,0 @@
-{"version":3,"file":"undoManager.d.ts","sourceRoot":"","sources":["undoManager.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAKH,qBAAa,WAAW;IACtB,OAAO,CAAC,MAAM,CAAC,OAAO,CAAkC;IAExD,MAAM,CAAC,SAAS,CAAC,OAAO,EAAE,WAAW;IAerC,MAAM,CAAC,IAAI,CAAC,OAAO,EAAE,WAAW;CAUjC"}

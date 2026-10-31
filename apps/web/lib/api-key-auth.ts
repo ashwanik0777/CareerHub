@@ -1,5 +1,6 @@
 import { prisma } from '@platform/db';
 import { getSession } from '@/lib/auth-server';
+import { hashSecret } from '@/lib/api-keys';
 
 export interface ApiKeyValidationResult {
   isValid: boolean;
@@ -11,6 +12,7 @@ export interface ApiKeyValidationResult {
 
 /**
  * Validates a request against database API keys and verifies target scope bounds.
+ * Keys are stored hashed; the presented key is hashed and looked up by digest.
  */
 export async function validateApiKey(
   request: Request,
@@ -25,12 +27,15 @@ export async function validateApiKey(
   }
 
   const apiKeyStr = authHeader.substring(7);
+  if (apiKeyStr.length > 256) {
+    return { isValid: false, errorResponse: { error: 'Unauthorized: Invalid API key', status: 401 } };
+  }
 
   try {
     const apiKey = await prisma.apiKey.findUnique({
-      where: { key: apiKeyStr },
+      where: { keyHash: hashSecret(apiKeyStr) },
       include: {
-        user: true,
+        user: { select: { name: true, email: true } },
       },
     });
 
@@ -38,6 +43,14 @@ export async function validateApiKey(
       return {
         isValid: false,
         errorResponse: { error: 'Unauthorized: Invalid API key', status: 401 },
+      };
+    }
+
+    // Verify expiration limits
+    if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
+      return {
+        isValid: false,
+        errorResponse: { error: 'Unauthorized: API key expired', status: 401 },
       };
     }
 
@@ -52,13 +65,10 @@ export async function validateApiKey(
       };
     }
 
-    // Verify expiration limits
-    if (apiKey.expiresAt && apiKey.expiresAt < new Date()) {
-      return {
-        isValid: false,
-        errorResponse: { error: 'Unauthorized: API key expired', status: 401 },
-      };
-    }
+    // Best-effort usage stamp; never blocks the request.
+    prisma.apiKey
+      .update({ where: { id: apiKey.id }, data: { lastUsedAt: new Date() } })
+      .catch(() => undefined);
 
     return {
       isValid: true,

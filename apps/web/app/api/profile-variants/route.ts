@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@platform/db';
 import { getSession } from '@/lib/auth-server';
 import { ResumeIntelligence } from '@/lib/resume-intelligence';
+import { profileVariantSchema } from '@platform/validation';
 
 const resumeIntelligence = new ResumeIntelligence();
 
@@ -27,15 +28,15 @@ export async function POST(request: Request) {
     const session = await getSession();
     if (!session) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
-    const body = await request.json();
-    const { scenario, targetRole } = body;
-
-    if (!scenario || !targetRole) {
+    const body = await request.json().catch(() => null);
+    const parsed = profileVariantSchema.safeParse(body);
+    if (!parsed.success) {
       return NextResponse.json(
-        { error: 'Validation failed', details: { scenario: !scenario ? ['Required'] : [], targetRole: !targetRole ? ['Required'] : [] } },
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
         { status: 400 },
       );
     }
+    const { scenario, targetRole } = parsed.data;
 
     // Fetch the user's full profile to feed the intelligence engine
     const profile = await prisma.profile.findUnique({

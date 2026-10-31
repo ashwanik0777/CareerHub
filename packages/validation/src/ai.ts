@@ -3,11 +3,14 @@ import { z } from 'zod';
 /**
  * Length caps are enforced by truncation, not rejection: real-world pages
  * routinely produce oversized nearbyText/labels, and clipping matches what the
- * model's 128-token window sees anyway. Wrong types still fail with 400.
+ * model's 128-token window sees anyway. Wrong types still fail with 400, and a
+ * hard ceiling (8× the clip) rejects pathological payloads before they are
+ * sliced.
  */
 const clippedString = (max: number) =>
   z
     .string()
+    .max(max * 8)
     .default('')
     .transform((s) => s.slice(0, max));
 
@@ -36,7 +39,13 @@ export const aiFeedbackSchema = z.object({
   predictedClass: clippedString(100),
   elementName: clippedString(300),
   wasCorrected: z.boolean().default(false),
-  timestamp: z.number().optional(),
+  // Unix epoch ms; anything outside 2000-01-01 … +1 day from now is garbage.
+  timestamp: z
+    .number()
+    .int()
+    .min(946684800000)
+    .refine((t) => t <= Date.now() + 86_400_000, 'timestamp is in the future')
+    .optional(),
 });
 
 export type AiFieldDescriptor = z.infer<typeof aiFieldDescriptorSchema>;

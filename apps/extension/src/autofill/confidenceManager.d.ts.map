@@ -1,1 +1,0 @@
-{"version":3,"file":"confidenceManager.d.ts","sourceRoot":"","sources":["confidenceManager.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,oBAAY,eAAe;IACzB,SAAS,cAAc,CAAM,SAAS;IACtC,QAAQ,aAAa,CAAQ,cAAc;IAC3C,MAAM,WAAW;CAClB;AAED,qBAAa,iBAAiB;IAC5B,MAAM,CAAC,QAAQ,CAAC,UAAU,EAAE,MAAM,GAAG,eAAe;CAKrD"}

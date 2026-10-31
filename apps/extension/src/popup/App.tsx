@@ -4,8 +4,7 @@ import {
   ExternalLink, LogOut, UserCheck, Settings as SettingsIcon, Zap, ZapOff
 } from 'lucide-react';
 import { BRANDING } from '@platform/utils';
-
-const BACKEND_URL = 'http://localhost:3000';
+import { DEFAULT_BACKEND_URL, getBackendUrl } from '../utils/backend-config';
 
 export function App() {
   const [authenticated, setAuthenticated] = React.useState<boolean>(false);
@@ -23,6 +22,7 @@ export function App() {
   const [autofillReport, setAutofillReport] = React.useState<any>(null);
   const [error, setError] = React.useState<string | null>(null);
   const [autoFillEnabled, setAutoFillEnabled] = React.useState<boolean>(false);
+  const [backendUrl, setBackendUrl] = React.useState<string>(DEFAULT_BACKEND_URL);
 
   // Calculate profile completion percentage
   const calculateCompletionScore = (p: any): number => {
@@ -71,6 +71,7 @@ export function App() {
 
   React.useEffect(() => {
     getStatus();
+    getBackendUrl().then(setBackendUrl);
 
     // Query active tab URL
     chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -139,8 +140,23 @@ export function App() {
   };
 
   const handleLogout = () => {
-    window.open(`${BACKEND_URL}/dashboard/settings`, '_blank');
+    chrome.runtime.sendMessage({ action: 'LOGOUT' }, () => {
+      void chrome.runtime.lastError;
+      setAuthenticated(false);
+      setProfile(null);
+      setResumes([]);
+      setAutofillReport(null);
+      setError(`Signed out. Log in to ${BRANDING.name} to use autofill again.`);
+    });
   };
+
+  const activeHostname = React.useMemo(() => {
+    try {
+      return activeTabUrl ? new URL(activeTabUrl).hostname : '—';
+    } catch {
+      return '—';
+    }
+  }, [activeTabUrl]);
 
   const handleOpenOptions = () => {
     if (chrome.runtime.openOptionsPage) {
@@ -202,8 +218,9 @@ export function App() {
               </p>
             </div>
             <a 
-              href={BACKEND_URL} 
+              href={backendUrl} 
               target="_blank" 
+              rel="noreferrer"
               className="inline-flex items-center justify-center gap-1.5 w-full h-9 bg-white text-black font-semibold text-xs rounded hover:bg-zinc-200 transition-colors shadow-sm cursor-pointer"
             >
               <span>Go to {BRANDING.name}</span>
@@ -234,7 +251,7 @@ export function App() {
                 <label className="text-[9px] font-semibold tracking-wider text-zinc-500 uppercase">Active Context</label>
                 <div className="flex items-center justify-between bg-zinc-900/20 border border-zinc-900 rounded px-2.5 py-2 text-xs">
                   <span className="font-semibold text-zinc-300">{detectedSite}</span>
-                  <span className="text-[10px] text-zinc-500 truncate max-w-[120px]">{new URL(activeTabUrl).hostname}</span>
+                  <span className="text-[10px] text-zinc-500 truncate max-w-[120px]">{activeHostname}</span>
                 </div>
               </div>
 

@@ -99,10 +99,10 @@ export async function GET() {
         
         if (exp.description) {
           experienceLatex += `\\begin{itemize}\n`;
-          const lines = exp.description.split('\\n').map(l => l.trim()).filter(Boolean);
+          const lines = exp.description.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
           lines.forEach(line => {
              // Handle bullet points
-             let cleanLine = line.replace(/^[•\\-\\*]\s*/, '');
+             let cleanLine = line.replace(/^[•\-*]\s*/, '');
              experienceLatex += `\\item ${escapeLatex(cleanLine)}\n`;
           });
           experienceLatex += `\\end{itemize}\n`;
@@ -125,9 +125,9 @@ export async function GET() {
         
         if (proj.description) {
           projectsLatex += `\\begin{itemize}\n`;
-          const lines = proj.description.split('\\n').map(l => l.trim()).filter(Boolean);
+          const lines = proj.description.split(/\r?\n/).map(l => l.trim()).filter(Boolean);
           lines.forEach(line => {
-             let cleanLine = line.replace(/^[•\\-\\*]\s*/, '');
+             let cleanLine = line.replace(/^[•\-*]\s*/, '');
              projectsLatex += `\\item ${escapeLatex(cleanLine)}\n`;
           });
           projectsLatex += `\\end{itemize}\n`;

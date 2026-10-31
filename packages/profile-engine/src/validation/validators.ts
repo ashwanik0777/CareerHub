@@ -34,7 +34,7 @@ export class Validators {
   static isPhone(value: string | null | undefined): boolean {
     if (!value) return false;
     // Accepts optional +, numbers, spaces, parens, hyphens. Min 7 digits.
-    const phoneRegex = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/im;
+    const phoneRegex = /^\+?\(?[0-9]{3}\)?[-\s.]?[0-9]{3}[-\s.]?[0-9]{4,6}$/;
     const digitsOnly = value.replace(/\D/g, '');
     return digitsOnly.length >= 7 && phoneRegex.test(value);
   }

@@ -35,24 +35,36 @@ const MAX_BATCH_SIZE = 50;
 
 /**
  * Reads the session token so API calls authenticate like the rest of the
- * extension: cookie first, chrome.storage fallback.
+ * extension: cookie for the backend origin first, chrome.storage fallback.
  */
-async function getSessionToken(origin: string): Promise<string | null> {
+export async function getSessionToken(origin: string): Promise<string | null> {
   return new Promise((resolve) => {
     if (typeof chrome === 'undefined' || !chrome.cookies) {
       resolve(null);
       return;
     }
     chrome.cookies.get({ url: origin, name: 'session_token' }, (cookie) => {
+      if (chrome.runtime.lastError) {
+        // No host permission for this origin yet (user must grant it in Options).
+        resolve(null);
+        return;
+      }
       if (cookie && cookie.value) {
         resolve(cookie.value);
       } else {
         chrome.storage.local.get(['session_token'], (result) => {
-          resolve(result.session_token || null);
+          resolve(typeof result.session_token === 'string' ? result.session_token : null);
         });
       }
     });
   });
+}
+
+async function authHeaders(origin: string): Promise<Record<string, string>> {
+  const token = await getSessionToken(origin);
+  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  if (token) headers['Authorization'] = `Bearer ${token}`;
+  return headers;
 }
 
 export class ApiService {
@@ -63,78 +75,59 @@ export class ApiService {
    * extension's internal PredictResponse.
    */
   static async predictBatch(fields: PredictRequestField[]): Promise<PredictResponse> {
-    const settings = await StorageService.getSettings();
-    const endpoint = `${settings.apiEndpoint}/predict`;
-    const origin = new URL(settings.apiEndpoint).origin;
-    const token = await getSessionToken(origin);
-
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
+    const { backendUrl } = await StorageService.getSettings();
+    const endpoint = `${backendUrl}/api/ai/predict`;
+    const headers = await authHeaders(backendUrl);
 
     const started = Date.now();
     const allPredictions: ServerPrediction[] = [];
 
-    try {
-      for (let i = 0; i < fields.length; i += MAX_BATCH_SIZE) {
-        const chunk = fields.slice(i, i + MAX_BATCH_SIZE);
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers,
-          body: JSON.stringify({ fields: chunk }),
-        });
+    for (let i = 0; i < fields.length; i += MAX_BATCH_SIZE) {
+      const chunk = fields.slice(i, i + MAX_BATCH_SIZE);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ fields: chunk }),
+      });
 
-        if (!response.ok) {
-          throw new Error(`API Error: ${response.status} ${response.statusText}`);
-        }
-
-        const data = await response.json();
-        allPredictions.push(...((data.predictions || []) as ServerPrediction[]));
+      if (!response.ok) {
+        throw new Error(`API Error: ${response.status} ${response.statusText}`);
       }
 
-      return {
-        fields: allPredictions.map((p) => ({
-          // Empty attributeId means the model abstained — treat as miscellaneous
-          predictedClass: p.attributeId || 'miscellaneous',
-          confidence: p.confidence,
-          confidenceLevel: p.confidenceLevel,
-          topK: (p.alternativeMappings || []).map((alt) => ({
-            class: alt.attributeId,
-            probability: alt.confidence,
-          })),
-        })),
-        batchLatencyMs: Date.now() - started,
-      };
-    } catch (error) {
-      console.error('ApiService: Failed to call prediction API', error);
-      throw error;
+      const data = await response.json();
+      allPredictions.push(...((data.predictions || []) as ServerPrediction[]));
     }
+
+    return {
+      fields: allPredictions.map((p) => ({
+        // Empty attributeId means the model abstained — treat as miscellaneous
+        predictedClass: p.attributeId || 'miscellaneous',
+        confidence: p.confidence,
+        confidenceLevel: p.confidenceLevel,
+        topK: (p.alternativeMappings || []).map((alt) => ({
+          class: alt.attributeId,
+          probability: alt.confidence,
+        })),
+      })),
+      batchLatencyMs: Date.now() - started,
+    };
   }
 
   /**
-   * Submit feedback for an autofilled field.
+   * Submit feedback for an autofilled field. Never throws: feedback is
+   * best-effort and must not break the autofill flow.
    */
-  static async submitFeedback(feedbackData: any): Promise<void> {
-    const settings = await StorageService.getSettings();
-    const endpoint = `${settings.apiEndpoint}/feedback`;
-    const origin = new URL(settings.apiEndpoint).origin;
-    const token = await getSessionToken(origin);
-
-    const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
+  static async submitFeedback(feedbackData: unknown): Promise<void> {
     try {
-      await fetch(endpoint, {
+      const { backendUrl } = await StorageService.getSettings();
+      const headers = await authHeaders(backendUrl);
+      await fetch(`${backendUrl}/api/ai/feedback`, {
         method: 'POST',
         headers,
         body: JSON.stringify(feedbackData),
       });
     } catch (error) {
       console.error('ApiService: Failed to submit feedback', error);
-      // Fail silently for feedback
     }
   }
 }

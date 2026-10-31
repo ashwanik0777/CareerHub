@@ -126,12 +126,25 @@ function getXPath(element: Element): string {
   return '';
 }
 
+export interface ScanOptions {
+  /**
+   * Skip the expensive per-field extras (nearby text, section heading walk,
+   * xpath, css selector). The direct heuristic fill only needs label,
+   * placeholder, name and aria-label.
+   */
+  lite?: boolean;
+}
+
 /**
  * Main scanner function: collects all form fields and their metadata.
  */
-export function scanDomForFields(root: Document | ShadowRoot | Element = document): ExtractedField[] {
+export function scanDomForFields(
+  root: Document | ShadowRoot | Element = document,
+  options: ScanOptions = {}
+): ExtractedField[] {
   const elements = getAllFormElements(root);
   const fields: ExtractedField[] = [];
+  const lite = options.lite === true;
 
   elements.forEach((node) => {
     const element = node as HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement;
@@ -142,12 +155,12 @@ export function scanDomForFields(root: Document | ShadowRoot | Element = documen
         visibleLabel: extractLabel(element),
         placeholder: ('placeholder' in element) ? (element as any).placeholder || '' : '',
         fieldName: element.name || element.id || '',
-        nearbyText: extractNearbyText(element),
-        sectionHeading: extractSectionHeading(element),
+        nearbyText: lite ? '' : extractNearbyText(element),
+        sectionHeading: lite ? '' : extractSectionHeading(element),
         ariaLabel: element.getAttribute('aria-label') || '',
         fieldType: (element as HTMLInputElement).type || 'text',
-        xpath: getXPath(element),
-        cssSelector: getCssSelector(element),
+        xpath: lite ? '' : getXPath(element),
+        cssSelector: lite ? '' : getCssSelector(element),
       }
     });
   });

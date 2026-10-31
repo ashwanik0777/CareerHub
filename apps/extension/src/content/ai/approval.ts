@@ -61,43 +61,49 @@ export class ApprovalPopup {
 
     const pct = Math.round(confidence * 100);
     
+    // Static markup only — dynamic values are assigned via textContent below.
     popup.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px; margin-bottom: 4px;">
-        <span style="font-weight: 600; font-size: 13px;">Auto-detect: ${predictedLabel}</span>
-        <span style="background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 999px; font-size: 11px; font-weight: 600;">${pct}%</span>
+        <span id="ch-title" style="font-weight: 600; font-size: 13px;"></span>
+        <span id="ch-confidence" style="background: #fef3c7; color: #d97706; padding: 2px 6px; border-radius: 999px; font-size: 11px; font-weight: 600;"></span>
       </div>
       <div style="font-size: 13px; color: #475569; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-        Value: <strong>${suggestedValue}</strong>
+        Value: <strong id="ch-value"></strong>
       </div>
       <div style="display: flex; gap: 8px; margin-top: 4px;">
         <button id="btn-approve" style="flex: 1; background: #2563eb; color: white; border: none; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 12px;">Approve</button>
         <button id="btn-reject" style="flex: 1; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 6px 12px; border-radius: 6px; cursor: pointer; font-weight: 500; font-size: 12px;">Reject</button>
       </div>
     `;
+    (popup.querySelector('#ch-title') as HTMLElement).textContent = `Auto-detect: ${predictedLabel}`;
+    (popup.querySelector('#ch-confidence') as HTMLElement).textContent = `${pct}%`;
+    (popup.querySelector('#ch-value') as HTMLElement).textContent = suggestedValue;
+
+    // Auto-remove if user clicks outside; the listener is always detached
+    // with the popup so no document-level handlers accumulate.
+    const outsideClickListener = () => dismiss();
+    const dismiss = () => {
+      popup.remove();
+      document.removeEventListener('mousedown', outsideClickListener);
+    };
 
     popup.querySelector('#btn-approve')?.addEventListener('click', () => {
       onApprove();
       autofillElement(targetElement, suggestedValue);
       highlightField(targetElement, 'HIGH');
       FeedbackEngine.recordPositive(predictedLabel, suggestedValue);
-      popup.remove();
+      dismiss();
     });
 
     popup.querySelector('#btn-reject')?.addEventListener('click', () => {
       onReject();
       highlightField(targetElement, 'LOW');
       FeedbackEngine.recordNegative(predictedLabel, suggestedValue);
-      popup.remove();
+      dismiss();
     });
 
     this.shadowRoot.appendChild(popup);
-    
-    // Auto-remove if user clicks outside
-    const outsideClickListener = () => {
-      popup.remove();
-      document.removeEventListener('mousedown', outsideClickListener);
-    };
-    
+
     setTimeout(() => {
       document.addEventListener('mousedown', outsideClickListener);
     }, 100);

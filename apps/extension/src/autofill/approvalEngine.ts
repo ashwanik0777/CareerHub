@@ -64,20 +64,22 @@ export class ApprovalEngine {
 
     const pct = Math.round(sampleData.aiPrediction.confidence * 100);
     
+    // Static markup only — every dynamic value is assigned through DOM
+    // properties below so page/profile content can never be parsed as HTML.
     popup.innerHTML = `
       <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #f1f5f9; padding-bottom: 8px;">
         <span style="font-weight: 700; font-size: 14px; color: #1e293b;">CareerHub AI</span>
-        <span style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid #fde68a;">${pct}% Confidence</span>
+        <span id="ch-confidence" style="background: #fef3c7; color: #b45309; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; border: 1px solid #fde68a;"></span>
       </div>
       
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Predicted Label</span>
-        <span style="font-size: 13px; font-weight: 500; color: #334155;">${sampleData.aiPrediction.label}</span>
+        <span id="ch-label" style="font-size: 13px; font-weight: 500; color: #334155;"></span>
       </div>
 
       <div style="display: flex; flex-direction: column; gap: 4px;">
         <span style="font-size: 11px; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">Suggested Value</span>
-        <input type="text" id="ch-edit-value" value="${suggestedValue}" style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #0f172a; outline: none;" />
+        <input type="text" id="ch-edit-value" style="width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 13px; color: #0f172a; outline: none;" />
       </div>
 
       <div style="display: flex; gap: 8px; margin-top: 4px;">
@@ -85,6 +87,9 @@ export class ApprovalEngine {
         <button id="btn-reject" style="flex: 1; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 12px; border-radius: 6px; cursor: pointer; font-weight: 600; font-size: 13px; transition: background 0.2s;">Reject</button>
       </div>
     `;
+    (popup.querySelector('#ch-confidence') as HTMLElement).textContent = `${pct}% Confidence`;
+    (popup.querySelector('#ch-label') as HTMLElement).textContent = String(sampleData.aiPrediction.label ?? '');
+    (popup.querySelector('#ch-edit-value') as HTMLInputElement).value = suggestedValue;
 
     popup.querySelector('#btn-approve')?.addEventListener('click', () => {
       const editedValue = (popup.querySelector('#ch-edit-value') as HTMLInputElement).value;

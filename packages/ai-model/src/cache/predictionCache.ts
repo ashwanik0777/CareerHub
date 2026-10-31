@@ -8,8 +8,9 @@ interface CacheEntry<T> {
 }
 
 /**
- * Clean in-memory caching wrapper featuring input normalisation,
- * dynamic TTL expiration, in-flight promise deduplication, and size bounds-capping.
+ * In-memory cache with TTL expiration, in-flight promise deduplication and an
+ * LRU size bound: a hit re-inserts the key so the least recently *used* entry
+ * is evicted first, not merely the oldest insertion.
  */
 export class PredictionCache<T> {
   private cache = new Map<string, CacheEntry<T>>();
@@ -39,19 +40,24 @@ export class PredictionCache<T> {
       return null;
     }
 
+    // LRU touch: Map preserves insertion order, so re-inserting moves the
+    // entry to the back and the front is always the least recently used.
+    this.cache.delete(key);
+    this.cache.set(key, entry);
     this.hits++;
     return entry.value;
   }
 
   /**
    * Stores a result in the cache with the configured TTL.
-   * Evicts the oldest entry if size exceeds cache capacity.
+   * Evicts the least recently used entry if size exceeds cache capacity.
    */
   set(text: string, value: T): void {
     const key = this.hashKey(text);
 
+    this.cache.delete(key);
     if (this.cache.size >= CACHE_MAX_ENTRIES) {
-      // Evict oldest entry (the first key in the map iterator)
+      // Evict least recently used entry (the first key in the map iterator)
       const firstKey = this.cache.keys().next().value;
       if (firstKey) {
         this.cache.delete(firstKey);

@@ -60,16 +60,16 @@ export class BenchmarkRunner {
       const confidence = predicted?.confidence ?? 0;
       const correct = predictedId === testCase.expectedAttributeId;
 
+      // Micro-averaged single-label classification:
+      //   correct prediction            → TP
+      //   wrong prediction              → FP (for the predicted class) + FN (for the expected class)
+      //   abstained (no prediction)     → FN
       if (correct && predicted) {
         truePositives++;
-      } else if (!correct && predicted) {
+      } else if (predicted) {
         falsePositives++;
-      } else if (!correct && !predicted) {
         falseNegatives++;
-      }
-
-      // Also check if correct answer exists but wasn't selected (false negative)
-      if (!predicted) {
+      } else {
         falseNegatives++;
       }
 

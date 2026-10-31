@@ -1,1 +1,0 @@
-{"version":3,"file":"latencyTracker.d.ts","sourceRoot":"","sources":["latencyTracker.ts"],"names":[],"mappings":"AAAA;;;GAGG;AAEH,qBAAa,cAAc;IACzB,OAAO,CAAC,MAAM,CAAC,MAAM,CAA6B;IAElD,MAAM,CAAC,KAAK,CAAC,EAAE,EAAE,MAAM;IAIvB,MAAM,CAAC,GAAG,CAAC,EAAE,EAAE,MAAM,EAAE,GAAG,EAAE,MAAM;CASnC"}
