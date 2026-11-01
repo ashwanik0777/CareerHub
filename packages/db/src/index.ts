@@ -11,4 +11,8 @@ if (process.env.NODE_ENV !== 'production') {
   globalThis.prisma = prisma;
 }
 
-export * from '@prisma/client';
+// Explicit runtime exports (an `export *` over the CommonJS Prisma client
+// forces bundlers to add runtime interop code); every model/enum type is
+// re-exported type-only.
+export { Prisma, PrismaClient } from '@prisma/client';
+export type * from '@prisma/client';

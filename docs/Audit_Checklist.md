@@ -61,3 +61,11 @@ Status legend: `[ ]` pending · `[x]` done · `[-]` deferred (needs a product de
 - [-] E5. Mock AI features (ATS, optimize, cover letter) return canned text — product decision
 - [-] E6. `apps/admin` is a static mock; docker-compose already says admin lives in web — delete or keep is your call
 - [-] E7. 22MB ONNX model as plain git blob — consider Git LFS
+
+## F. CI follow-ups (found on first GitHub Actions runs)
+
+- [x] F1. `@platform/semantic-engine` exposed types from `dist/`, which does not exist when `typecheck` runs → types now resolve from `src/`; fixed the strict-mode type gaps this exposed
+- [x] F2. `JWT_SECRET` checked at import time broke `next build` (page-data collection imports every route; Turborepo strict env mode also filters undeclared vars) → secret resolved lazily on first sign/verify, still fails closed at runtime
+- [x] F3. `turbo.json` declares build/dev env (`env` + `passThroughEnv`) so `BUILD_STANDALONE` etc. reach tasks
+- [x] F4. `@platform/ai-model` "build" was a no-emit `tsc` (Turbo "no output files" warning) → removed; covered by `typecheck`
+- [x] F5. `export *` over CommonJS `@prisma/client` (Turbopack warning) → explicit runtime exports + `export type *`

@@ -1,12 +1,19 @@
 import { NextResponse, NextRequest } from 'next/server';
 import { jwtVerify } from 'jose';
 
-// Fail closed: a missing secret must never silently fall back to a public value.
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  throw new Error('JWT_SECRET environment variable is required (min 32 chars). Set it in .env (see .env.example).');
+// Fail closed: a missing secret must never silently fall back to a public
+// value. Resolved on first request (not at import) so builds without runtime
+// secrets still succeed; without a valid secret every proxied request errors.
+let cachedKey: Uint8Array | null = null;
+function getKey(): Uint8Array {
+  if (cachedKey) return cachedKey;
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET environment variable is required (min 32 chars). Set it in .env (see .env.example).');
+  }
+  cachedKey = new TextEncoder().encode(secret);
+  return cachedKey;
 }
-const key = new TextEncoder().encode(JWT_SECRET);
 
 // ────────────────────────────────────────────────────────────────────────────
 // In-memory token-bucket rate limiter.
@@ -132,6 +139,7 @@ function applySecurityHeaders(response: NextResponse) {
 }
 
 export async function proxy(request: NextRequest) {
+  getKey(); // throws on a missing/short secret instead of treating every token as invalid
   let token = request.cookies.get('session_token')?.value;
   if (!token) {
     const authHeader = request.headers.get('Authorization');
@@ -163,7 +171,7 @@ export async function proxy(request: NextRequest) {
   // If user is already logged in and visits /login or /register, redirect to /dashboard
   if ((pathname === '/login' || pathname === '/register') && token) {
     try {
-      await jwtVerify(token, key, { algorithms: ['HS256'] });
+      await jwtVerify(token, getKey(), { algorithms: ['HS256'] });
       return applySecurityHeaders(NextResponse.redirect(getRedirectUrl('/dashboard', request)));
     } catch {
       // Token invalid — let them see the login/register page
@@ -178,7 +186,7 @@ export async function proxy(request: NextRequest) {
       response = NextResponse.redirect(getRedirectUrl('/login', request));
     } else {
       try {
-        await jwtVerify(token, key, { algorithms: ['HS256'] });
+        await jwtVerify(token, getKey(), { algorithms: ['HS256'] });
       } catch {
         response = NextResponse.redirect(getRedirectUrl('/login', request));
         response.cookies.delete('session_token');
@@ -199,7 +207,7 @@ export async function proxy(request: NextRequest) {
       response = NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     } else {
       try {
-        await jwtVerify(token, key, { algorithms: ['HS256'] });
+        await jwtVerify(token, getKey(), { algorithms: ['HS256'] });
       } catch {
         response = NextResponse.json({ error: 'Unauthorized session' }, { status: 401 });
       }

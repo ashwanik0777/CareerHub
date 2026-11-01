@@ -9,17 +9,39 @@
         ".next/**",
         "!.next/cache/**",
         "dist/**"
+      ],
+      "env": [
+        "NODE_ENV",
+        "BUILD_STANDALONE",
+        "NEXT_PUBLIC_*"
+      ],
+      "passThroughEnv": [
+        "JWT_SECRET",
+        "DATABASE_URL",
+        "AI_MODEL_DIR"
       ]
     },
     "db:generate": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": [
+        "DATABASE_URL"
+      ]
     },
     "db:push": {
-      "cache": false
+      "cache": false,
+      "passThroughEnv": [
+        "DATABASE_URL"
+      ]
     },
     "dev": {
       "cache": false,
-      "persistent": true
+      "persistent": true,
+      "passThroughEnv": [
+        "JWT_SECRET",
+        "DATABASE_URL",
+        "AI_MODEL_DIR",
+        "PORT"
+      ]
     },
     "lint": {
       "dependsOn": [

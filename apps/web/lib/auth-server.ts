@@ -3,11 +3,22 @@ import { SignJWT, jwtVerify } from 'jose';
 import { cookies, headers } from 'next/headers';
 import { prisma } from '@platform/db';
 
-const JWT_SECRET = process.env.JWT_SECRET;
-if (!JWT_SECRET || JWT_SECRET.length < 32) {
-  throw new Error('JWT_SECRET environment variable is required (min 32 chars). Set it in .env (see .env.example).');
+/**
+ * Signing key, resolved on first use rather than at import time: `next build`
+ * imports every route to collect page data, and the secret is a runtime-only
+ * value (CI and Docker builds do not have it). There is still no fallback —
+ * any sign/verify without a valid secret throws, so auth fails closed.
+ */
+let cachedKey: Uint8Array | null = null;
+function getKey(): Uint8Array {
+  if (cachedKey) return cachedKey;
+  const secret = process.env.JWT_SECRET;
+  if (!secret || secret.length < 32) {
+    throw new Error('JWT_SECRET environment variable is required (min 32 chars). Set it in .env (see .env.example).');
+  }
+  cachedKey = new TextEncoder().encode(secret);
+  return cachedKey;
 }
-const key = new TextEncoder().encode(JWT_SECRET);
 
 const SESSION_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
@@ -22,10 +33,11 @@ export async function encrypt(payload: SessionPayload) {
     .setProtectedHeader({ alg: 'HS256' })
     .setIssuedAt()
     .setExpirationTime('7d')
-    .sign(key);
+    .sign(getKey());
 }
 
 export async function decrypt(input: string): Promise<SessionPayload | null> {
+  const key = getKey(); // outside try: a misconfigured secret must surface as an error, not as "logged out"
   try {
     const { payload } = await jwtVerify(input, key, {
       algorithms: ['HS256'],
