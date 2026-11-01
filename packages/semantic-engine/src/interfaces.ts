@@ -2,10 +2,12 @@
 // Semantic Engine Core Interfaces
 // ────────────────────────────────────────────────────────────────────────────
 
-import { FieldPrediction, ConfidenceLevel, MappingSource } from '@platform/types';
+import { ConfidenceLevel, MappingSource } from '@platform/types';
+import type { FieldPrediction } from '@platform/types';
 
 // Re-export for convenience within the engine
-export { FieldPrediction, ConfidenceLevel, MappingSource };
+export { ConfidenceLevel, MappingSource };
+export type { FieldPrediction };
 
 /**
  * Simplified engine-internal field descriptor.

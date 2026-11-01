@@ -5,15 +5,14 @@
 // ────────────────────────────────────────────────────────────────────────────
 
 // Core interfaces and types
-export {
+export type {
   FieldDescriptor,
   MappingStrategy,
   FieldAnalysisResult,
   EngineConfig,
   FieldPrediction,
-  ConfidenceLevel,
-  MappingSource,
 } from './interfaces';
+export { ConfidenceLevel, MappingSource } from './interfaces';
 
 // Main engine
 export { SemanticFieldEngine } from './engine';
@@ -42,15 +41,12 @@ export { cosineSimilarity } from './similarity';
 export { TfIdfVectorizer, tokenize, STOP_WORDS } from './vectorizers/tfidf';
 
 // Knowledge base
-export {
-  SiteFieldMapping,
-  SiteMappingConfig,
-  SITE_MAPPINGS,
-  detectPlatform,
-  findSiteMapping,
-} from './knowledge-base/index';
+export type { SiteFieldMapping, SiteMappingConfig } from './knowledge-base/index';
+export { SITE_MAPPINGS, detectPlatform, findSiteMapping } from './knowledge-base/index';
 
 // Benchmarking
-export { BenchmarkRunner, TestCaseResult } from './benchmarking/index';
-export { TestCase, TEST_DATASET } from './benchmarking/test-dataset';
+export { BenchmarkRunner } from './benchmarking/index';
+export type { TestCaseResult } from './benchmarking/index';
+export { TEST_DATASET } from './benchmarking/test-dataset';
+export type { TestCase } from './benchmarking/test-dataset';
 export { accuracy, precision, recall, f1Score } from './benchmarking/metrics';

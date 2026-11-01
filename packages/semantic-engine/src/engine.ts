@@ -5,7 +5,7 @@
 // and returns a FieldAnalysisResult with ranked predictions.
 // ────────────────────────────────────────────────────────────────────────────
 
-import { FieldDescriptor, FieldAnalysisResult, EngineConfig, MappingStrategy } from './interfaces';
+import { FieldDescriptor, FieldAnalysisResult, EngineConfig } from './interfaces';
 import { RuleEngineStrategy } from './strategies/rule-engine';
 import { KeywordMatcherStrategy } from './strategies/keyword-matcher';
 import { SemanticMatcherStrategy } from './strategies/semantic-matcher';
@@ -94,10 +94,9 @@ export class SemanticFieldEngine {
     );
 
     // Select the top prediction if it exceeds the medium threshold
+    const top = predictions[0];
     const selectedPrediction =
-      predictions.length > 0 && predictions[0].confidence >= this.config.mediumConfidenceThreshold
-        ? predictions[0]
-        : null;
+      top && top.confidence >= this.config.mediumConfidenceThreshold ? top : null;
 
     const analysisTimeMs = performance.now() - startTime;
 

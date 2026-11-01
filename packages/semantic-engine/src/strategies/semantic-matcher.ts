@@ -44,7 +44,9 @@ export class SemanticMatcherStrategy implements MappingStrategy {
 
     // Store pre-computed vectors keyed by attribute ID
     for (let i = 0; i < attributes.length; i++) {
-      this.attributeVectors.set(attributes[i].id, vectors[i]);
+      const attr = attributes[i];
+      const vector = vectors[i];
+      if (attr && vector) this.attributeVectors.set(attr.id, vector);
     }
   }
 
