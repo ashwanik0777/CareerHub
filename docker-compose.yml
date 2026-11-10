@@ -33,12 +33,21 @@ services:
       - JWT_SECRET=${JWT_SECRET:?Set JWT_SECRET in your environment or .env}
       - PORT=3000
       - HEALTHCHECK_PATH=/api/ai/health
+      # Password-reset email. APP_URL is required in production (reset links
+      # are never built from the request Host header); SMTP_* are optional.
+      - APP_URL=${APP_URL:-http://localhost:3000}
+      - SMTP_HOST=${SMTP_HOST:-}
+      - SMTP_PORT=${SMTP_PORT:-587}
+      - SMTP_SECURE=${SMTP_SECURE:-}
+      - SMTP_USER=${SMTP_USER:-}
+      - SMTP_PASS=${SMTP_PASS:-}
+      - MAIL_FROM=${MAIL_FROM:-}
     depends_on:
       db:
         condition: service_healthy
 
-# NOTE: the admin dashboard now lives inside the web app at /dashboard/admin
-# (ADMIN role required) — no separate admin container is needed.
+# NOTE: the admin panel is part of the web app at /dashboard/admin
+# (ADMIN role required); there is no separate admin app or container.
 
 volumes:
   postgres_data:
